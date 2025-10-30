@@ -22,14 +22,14 @@ const TabButton: React.FC<{
     onClick: () => void;
     children: React.ReactNode;
 }> = ({ isActive, onClick, children }) => (
-  <button onClick={onClick} className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-t-lg focus:outline-none focus:ring-2 focus:ring-inset focus:ring-violet-500 transition-all duration-200 ${
+  <button onClick={onClick} className={`flex items-center space-x-2 px-4 py-2 text-sm font-medium rounded-t-lg focus:outline-none focus:ring-2 focus:ring-inset focus:ring-violet-500 transition-all duration-200 flex-shrink-0 ${
       isActive ? 'bg-white/50 dark:bg-slate-800/50 text-violet-600 dark:text-violet-400 border-b-2 border-violet-500' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
     }`}
   >{children}</button>
 );
 
 const SubTabButton: React.FC<{ isActive: boolean; onClick: () => void; children: React.ReactNode; }> = ({ isActive, onClick, children }) => (
-    <button onClick={onClick} className={`px-3 py-1 text-xs font-medium rounded-md focus:outline-none transition-colors duration-150 ${
+    <button onClick={onClick} className={`px-3 py-1 text-xs font-medium rounded-md focus:outline-none transition-colors duration-150 flex-shrink-0 ${
         isActive ? 'bg-violet-600 text-white shadow-sm' : 'text-slate-600 dark:text-slate-300 bg-slate-200/50 dark:bg-slate-700/50 hover:bg-slate-300/50 dark:hover:bg-slate-600/50'
       }`}>{children}</button>
 );
@@ -91,7 +91,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = (props) => {
 
         return (
             <div className="flex flex-col h-full">
-                <div className="flex border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+                <div className="flex flex-nowrap overflow-x-auto border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                     <TabButton isActive={activeTab === OutputFormat.IOS} onClick={() => setActiveTab(OutputFormat.IOS)}><AppleIcon className="w-4 h-4" /><span>{OutputFormat.IOS}</span></TabButton>
                     <TabButton isActive={activeTab === OutputFormat.ANDROID} onClick={() => setActiveTab(OutputFormat.ANDROID)}><AndroidIcon className="w-4 h-4" /><span>{OutputFormat.ANDROID}</span></TabButton>
                 </div>
@@ -99,7 +99,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = (props) => {
                     {activeTab === OutputFormat.IOS && <CodeBlock content={iosOutput} language="JSON" fileName="Localizable.xcstrings" />}
                     {activeTab === OutputFormat.ANDROID && (
                         <div className="h-full flex flex-col">
-                            <div className="flex space-x-2 p-1.5 bg-slate-100/50 dark:bg-slate-900/50 rounded-md mb-2 flex-shrink-0">
+                            <div className="flex flex-nowrap overflow-x-auto space-x-2 p-1.5 bg-slate-100/50 dark:bg-slate-900/50 rounded-md mb-2 flex-shrink-0">
                                 {androidLangs.map(lang => <SubTabButton key={lang} isActive={lang === activeAndroidLang} onClick={() => setActiveAndroidLang(lang)}>{lang}</SubTabButton>)}
                             </div>
                             <CodeBlock content={androidOutputs[activeAndroidLang] || ''} language="XML" fileName={`strings-${activeAndroidLang}.xml`} />
@@ -133,7 +133,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = (props) => {
 
         return (
             <div className="flex flex-col h-full">
-                <div className="flex border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+                <div className="flex flex-nowrap overflow-x-auto border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                     <TabButton isActive={activeTab === OutputFormat.IOS} onClick={() => setActiveTab(OutputFormat.IOS)}>
                         <AppleIcon className="w-4 h-4" /><span>iOS (.strings)</span>
                     </TabButton>
@@ -141,7 +141,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = (props) => {
                         <AndroidIcon className="w-4 h-4" /><span>Android (XML)</span>
                     </TabButton>
                 </div>
-                <div className="flex-grow pt-3 overflow-hidden">
+                <div className="flex-grow pt-3 flex flex-col min-h-0">
                     {activeTab === OutputFormat.IOS && (
                         <div className="flex-grow overflow-y-auto bg-slate-100/50 dark:bg-slate-900/50 rounded-md shadow-inner border border-slate-200 dark:border-slate-700 p-2 space-y-2">
                            {iosLangs.map(lang => <FileListItem key={lang} langCode={lang} content={generatedStrings[lang]} />)}
@@ -149,7 +149,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = (props) => {
                     )}
                      {activeTab === OutputFormat.ANDROID && (
                         <div className="h-full flex flex-col">
-                            <div className="flex space-x-2 p-1.5 bg-slate-100/50 dark:bg-slate-900/50 rounded-md mb-2 flex-shrink-0">
+                            <div className="flex flex-nowrap overflow-x-auto space-x-2 p-1.5 bg-slate-100/50 dark:bg-slate-900/50 rounded-md mb-2 flex-shrink-0">
                                 {androidLangs.map(lang => <SubTabButton key={lang} isActive={lang === activeAndroidLang} onClick={() => setActiveAndroidLang(lang)}>{lang}</SubTabButton>)}
                             </div>
                             <CodeBlock content={androidOutputs[activeAndroidLang] || ''} language="XML" fileName={`strings-${activeAndroidLang}.xml`} />

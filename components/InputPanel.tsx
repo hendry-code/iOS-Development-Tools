@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+
+import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { UploadIcon, CloseIcon } from './icons';
 import { LanguageFile, ConversionMode } from '../types';
 
@@ -42,6 +43,15 @@ const readFile = (file: File): Promise<LanguageFile> => {
 
 export const InputPanel: React.FC<InputPanelProps> = (props) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+
+  useEffect(() => {
+    // Reset search term if we are in stringsToCatalog mode and all files are removed
+    if (props.conversionMode === 'stringsToCatalog' && props.files.length === 0 && searchTerm) {
+      setSearchTerm('');
+    }
+  }, [props.files, props.conversionMode, searchTerm]);
+
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -50,6 +60,11 @@ export const InputPanel: React.FC<InputPanelProps> = (props) => {
   // --- RENDER FOR stringsToCatalog ---
   const renderStringsToCatalog = () => {
     const { files, onFilesChange, onConvert, isLoading, error, setError } = props;
+
+    const filteredFiles = useMemo(() => {
+        if (!searchTerm) return files;
+        return files.filter(file => file.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    }, [files, searchTerm]);
     
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFiles = event.target.files;
@@ -78,11 +93,25 @@ export const InputPanel: React.FC<InputPanelProps> = (props) => {
     return (
         <>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3 flex-shrink-0">Input (.strings files)</h2>
+            {files.length > 0 && (
+                <div className="mb-2 flex-shrink-0">
+                    <input
+                        type="text"
+                        placeholder="Search files by name..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full text-sm p-2 bg-slate-100 dark:bg-slate-700/60 border border-slate-300 dark:border-slate-600 rounded-md focus:ring-1 focus:ring-violet-500 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500"
+                        aria-label="Search input files"
+                    />
+                </div>
+            )}
             <div className="flex-grow overflow-y-auto bg-slate-100/50 dark:bg-slate-900/50 rounded-md shadow-inner border border-slate-200 dark:border-slate-700 p-2 space-y-2 min-h-[150px]">
                 {files.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400"><p>Upload .strings files to begin.</p></div>
+                ) : filteredFiles.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400"><p>No files match your search.</p></div>
                 ) : (
-                    files.map((file) => (
+                    filteredFiles.map((file) => (
                         <div key={file.name} className="flex items-center justify-between p-2 bg-white/70 dark:bg-slate-800/60 rounded-md">
                             <span className="text-sm font-mono text-slate-700 dark:text-slate-300 truncate pr-2" title={file.name}>{file.name}</span>
                             <div className="flex items-center space-x-2">
