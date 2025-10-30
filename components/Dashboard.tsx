@@ -42,13 +42,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 </p>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <FeatureTile
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* <FeatureTile
                     icon={<SparklesIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />}
                     title="AI Translator"
                     description="Upload a base English .strings file and use AI to translate it into multiple languages. Export as individual files or a combined iOS String Catalog."
                     onClick={() => setView('translator')}
-                />
+                /> */}
                 <FeatureTile
                     icon={<CombineIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />}
                     title="Combine .strings Files"
