@@ -19,7 +19,7 @@ interface InputPanelProps {
 }
 
 const guessLangCode = (fileName: string): string => {
-    const name = fileName.toLowerCase().replace('.strings', '');
+    const name = fileName.toLowerCase().replace(/\.(strings|stringsdict)$/, '');
     const lprojMatch = name.match(/([a-z]{2,3}(-[a-z0-9]+)?)\.lproj/);
     if (lprojMatch) return lprojMatch[1];
     const simpleMatch = name.match(/^[a-z]{2,3}(-[a-z0-9]+)?$/);
@@ -92,7 +92,7 @@ export const InputPanel: React.FC<InputPanelProps> = (props) => {
 
     return (
         <>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3 flex-shrink-0">Input (.strings files)</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-3 flex-shrink-0">Input (.strings, .stringsdict)</h2>
             {files.length > 0 && (
                 <div className="mb-2 flex-shrink-0">
                     <input
@@ -107,7 +107,7 @@ export const InputPanel: React.FC<InputPanelProps> = (props) => {
             )}
             <div className="flex-grow overflow-y-auto bg-slate-100/50 dark:bg-slate-900/50 rounded-md shadow-inner border border-slate-200 dark:border-slate-700 p-2 space-y-2 min-h-[150px]">
                 {files.length === 0 ? (
-                    <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400"><p>Upload .strings files to begin.</p></div>
+                    <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400"><p>Upload files to begin.</p></div>
                 ) : filteredFiles.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-slate-500 dark:text-slate-400"><p>No files match your search.</p></div>
                 ) : (
@@ -127,7 +127,7 @@ export const InputPanel: React.FC<InputPanelProps> = (props) => {
                 <button onClick={handleUploadClick} className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-300 bg-white/50 dark:bg-slate-700/50 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm hover:bg-slate-200/70 dark:hover:bg-slate-600/50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 focus:ring-violet-500 transition-all">
                     <UploadIcon className="w-4 h-4" /><span>Upload Files</span>
                 </button>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".strings" className="hidden" multiple />
+                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".strings,.stringsdict" className="hidden" multiple />
                 <button onClick={onConvert} disabled={isLoading || files.length === 0} className="px-6 py-2 text-sm font-semibold text-white bg-violet-600 rounded-md shadow-sm hover:bg-violet-700 disabled:bg-violet-600/50 dark:disabled:bg-violet-800/50 disabled:text-slate-100 dark:disabled:text-slate-400 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-100 dark:focus:ring-offset-slate-800 focus:ring-violet-500 transition-all">
                     {isLoading ? 'Converting...' : 'Convert'}
                 </button>

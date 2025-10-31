@@ -34,9 +34,8 @@ const SubTabButton: React.FC<{ isActive: boolean; onClick: () => void; children:
       }`}>{children}</button>
 );
 
-const FileListItem: React.FC<{ langCode: string; content: string }> = ({ langCode, content }) => {
+const FileListItem: React.FC<{ fileName: string; content: string }> = ({ fileName, content }) => {
     const [copied, setCopied] = useState(false);
-    const fileName = `${langCode}.strings`;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(content);
@@ -115,9 +114,9 @@ export const OutputPanel: React.FC<OutputPanelProps> = (props) => {
         const { generatedStrings, androidOutputs, activeTab, setActiveTab } = props;
         const [activeAndroidLang, setActiveAndroidLang] = useState('');
 
-        const iosLangs = Object.keys(generatedStrings);
+        const iosFiles = Object.keys(generatedStrings);
         const androidLangs = Object.keys(androidOutputs);
-        const hasOutput = iosLangs.length > 0 || androidLangs.length > 0;
+        const hasOutput = iosFiles.length > 0 || androidLangs.length > 0;
 
         useEffect(() => {
             if (androidLangs.length > 0 && !androidLangs.includes(activeAndroidLang)) {
@@ -135,7 +134,7 @@ export const OutputPanel: React.FC<OutputPanelProps> = (props) => {
             <div className="flex flex-col h-full">
                 <div className="flex flex-nowrap overflow-x-auto border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
                     <TabButton isActive={activeTab === OutputFormat.IOS} onClick={() => setActiveTab(OutputFormat.IOS)}>
-                        <AppleIcon className="w-4 h-4" /><span>iOS (.strings)</span>
+                        <AppleIcon className="w-4 h-4" /><span>iOS (.strings, .stringsdict)</span>
                     </TabButton>
                     <TabButton isActive={activeTab === OutputFormat.ANDROID} onClick={() => setActiveTab(OutputFormat.ANDROID)}>
                         <AndroidIcon className="w-4 h-4" /><span>Android (XML)</span>
@@ -144,7 +143,9 @@ export const OutputPanel: React.FC<OutputPanelProps> = (props) => {
                 <div className="flex-grow pt-3 flex flex-col min-h-0">
                     {activeTab === OutputFormat.IOS && (
                         <div className="flex-grow overflow-y-auto bg-slate-100/50 dark:bg-slate-900/50 rounded-md shadow-inner border border-slate-200 dark:border-slate-700 p-2 space-y-2">
-                           {iosLangs.map(lang => <FileListItem key={lang} langCode={lang} content={generatedStrings[lang]} />)}
+                           {Object.entries(generatedStrings)
+                                .sort(([fileNameA], [fileNameB]) => fileNameA.localeCompare(fileNameB))
+                                .map(([fileName, content]) => <FileListItem key={fileName} fileName={fileName} content={content} />)}
                         </div>
                     )}
                      {activeTab === OutputFormat.ANDROID && (

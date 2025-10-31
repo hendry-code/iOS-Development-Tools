@@ -1,4 +1,20 @@
-export type ParsedStrings = Record<string, string>;
+export interface PluralVariations {
+    _isPlural: true;
+    zero?: string;
+    one?: string;
+    two?: string;
+    few?: string;
+    many?: string;
+    other: string;
+}
+
+export type StringValue = string | PluralVariations;
+
+export function isPlural(value: StringValue): value is PluralVariations {
+    return typeof value === 'object' && value !== null && '_isPlural' in value && value._isPlural === true;
+}
+
+export type ParsedStrings = Record<string, StringValue>;
 
 export enum OutputFormat {
   IOS = 'iOS String Catalog',
@@ -13,9 +29,9 @@ export interface LanguageFile {
 
 /**
  * A structure to hold all translations for all keys.
- * E.g., { "welcome_title": { "en": "Welcome", "es": "Bienvenido" } }
+ * E.g., { "welcome_title": { "en": "Welcome" }, "apples_count": { "en": { "one": "1 apple", "other": "%d apples" } } }
  */
-export type ParsedMultiLanguageStrings = Record<string, Record<string, string>>;
+export type ParsedMultiLanguageStrings = Record<string, Record<string, StringValue>>;
 
 export type ConversionMode = 'stringsToCatalog' | 'catalogToStrings';
 

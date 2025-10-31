@@ -117,7 +117,7 @@ export const CombineStringsView: React.FC<CombineStringsViewProps> = ({ onBack }
         <div className="flex-1 flex justify-center">
             <div className="flex items-center space-x-2">
                 <CombineIcon className="w-5 h-5 text-violet-500 dark:text-violet-400" />
-                <h1 className="text-md font-bold text-slate-900 dark:text-slate-200">Combine .strings Files</h1>
+                <h1 className="text-md font-bold text-slate-900 dark:text-slate-200">Create String Catalog</h1>
             </div>
         </div>
         <div className="flex-1 flex justify-end items-center space-x-2">

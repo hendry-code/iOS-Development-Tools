@@ -51,8 +51,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 /> */}
                 <FeatureTile
                     icon={<CombineIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />}
-                    title="Combine .strings Files"
-                    description="Merge multiple language-specific .strings files into a single iOS String Catalog (.xcstrings) and corresponding Android XML files."
+                    title="Create String Catalog"
+                    description="Combine multiple `.strings` (key-value) and `.stringsdict` (plurals) files into a single iOS String Catalog (`.xcstrings`) and Android XML files."
                     onClick={() => setView('combine')}
                 />
                 <FeatureTile
