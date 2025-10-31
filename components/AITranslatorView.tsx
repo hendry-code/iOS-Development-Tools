@@ -16,7 +16,7 @@ const readFile = (file: File): Promise<LanguageFile> => {
         reader.onload = () => resolve({
             name: file.name,
             content: reader.result as string,
-            langCode: 'en', // Assume base is English
+            langCode: 'en',
         });
         reader.onerror = (err) => reject(err);
         reader.readAsText(file);
