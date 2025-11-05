@@ -106,25 +106,25 @@ export const CombineStringsView: React.FC<CombineStringsViewProps> = ({ onBack }
 
 
   return (
-    <div className="w-full max-w-7xl h-[90vh] min-h-[700px] flex flex-col bg-white/60 dark:bg-slate-800/50 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex-shrink-0">
+    <div className="w-full max-w-7xl h-[90vh] min-h-[700px] flex flex-col bg-slate-900/50 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-700">
+      <header className="flex items-center justify-between px-4 py-3 border-b border-slate-700 flex-shrink-0">
         <div className="flex-1">
-          <button onClick={onBack} className="flex items-center space-x-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+          <button onClick={onBack} className="flex items-center space-x-2 text-slate-400 hover:text-red-500 transition-colors">
              <ArrowLeftIcon className="w-5 h-5" />
              <span className="text-sm font-semibold">Dashboard</span>
           </button>
         </div>
         <div className="flex-1 flex justify-center">
             <div className="flex items-center space-x-2">
-                <CombineIcon className="w-5 h-5 text-violet-500 dark:text-violet-400" />
-                <h1 className="text-md font-bold text-slate-900 dark:text-slate-200">Create String Catalog</h1>
+                <CombineIcon className="w-5 h-5 text-red-500" />
+                <h1 className="text-md font-bold text-slate-200">Create String Catalog</h1>
             </div>
         </div>
         <div className="flex-1 flex justify-end items-center space-x-2">
-          <span className="text-xs text-green-500 dark:text-green-400 font-medium transition-opacity duration-300 w-12 text-right">{saveStatus}</span>
-          <button onClick={handleSaveProject} title="Save Project" className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-lg transition-colors"><SaveIcon className="w-5 h-5" /></button>
-          <button onClick={handleLoadProject} disabled={!hasSavedProject} title="Load Project" className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/50 dark:hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><FolderIcon className="w-5 h-5" /></button>
-          <button onClick={handleClearProject} title="Clear Project" className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><TrashIcon className="w-5 h-5" /></button>
+          <span className="text-xs text-green-400 font-medium transition-opacity duration-300 w-12 text-right">{saveStatus}</span>
+          <button onClick={handleSaveProject} title="Save Project" className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-700/50 rounded-lg transition-colors"><SaveIcon className="w-5 h-5" /></button>
+          <button onClick={handleLoadProject} disabled={!hasSavedProject} title="Load Project" className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><FolderIcon className="w-5 h-5" /></button>
+          <button onClick={handleClearProject} title="Clear Project" className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><TrashIcon className="w-5 h-5" /></button>
         </div>
       </header>
 

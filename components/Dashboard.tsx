@@ -15,15 +15,15 @@ const FeatureTile: React.FC<{
     return (
         <button
             onClick={onClick}
-            className="group relative w-full h-full p-6 text-left bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-2xl shadow-lg transition-all duration-300 ease-in-out hover:bg-white/90 dark:hover:bg-slate-800/80 hover:border-violet-500/50 dark:hover:border-violet-500/50 hover:shadow-violet-500/10 dark:hover:shadow-violet-500/10 hover:-translate-y-1"
+            className="group relative w-full h-full p-6 text-left bg-slate-900/70 backdrop-blur-lg border border-slate-700 rounded-lg shadow-lg transition-all duration-300 ease-in-out hover:bg-slate-800/90 hover:border-red-500/70 hover:shadow-xl hover:shadow-red-500/20 hover:-translate-y-1"
         >
-            <div className="flex items-center justify-center w-12 h-12 bg-slate-100 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-lg group-hover:bg-violet-100 dark:group-hover:bg-violet-600/50 group-hover:text-violet-500 dark:group-hover:text-violet-300 group-hover:border-violet-300 dark:group-hover:border-violet-500 transition-all duration-300">
+            <div className="flex items-center justify-center w-12 h-12 bg-red-900/50 border border-red-500/30 rounded-lg group-hover:bg-red-800/70 transition-all duration-300">
                 {icon}
             </div>
-            <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-slate-100">{title}</h3>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{description}</p>
-             <div className="absolute bottom-4 right-4 text-xs font-semibold text-slate-500 group-hover:text-violet-500 dark:group-hover:text-violet-400 transition-colors duration-300">
-                Launch Tool &rarr;
+            <h3 className="mt-4 text-lg font-bold text-slate-100">{title}</h3>
+            <p className="mt-2 text-sm text-slate-400">{description}</p>
+             <div className="absolute bottom-6 right-6 text-sm font-semibold text-red-500 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
+                Get Started &rarr;
             </div>
         </button>
     );
@@ -34,31 +34,31 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     return (
         <div className="w-full max-w-5xl">
             <header className="text-center mb-12">
-                <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight">
-                    iOS Development Tools
+                <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-100 tracking-tight">
+                    iOS & Android Localization Tools
                 </h1>
-                <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto">
+                <p className="mt-4 text-lg text-slate-400 max-w-3xl mx-auto">
                     A powerful suite of tools designed to accelerate your iOS and Android development workflow, from localization management to AI-powered translations.
                 </p>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* <FeatureTile
-                    icon={<SparklesIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />}
+                    icon={<SparklesIcon className="w-6 h-6 text-red-400" />}
                     title="AI Translator"
-                    description="Upload a base English .strings file and use AI to translate it into multiple languages. Export as individual files or a combined iOS String Catalog."
+                    description="Automatically translate your base language `.strings` file into multiple languages using AI. Export as individual files or a complete String Catalog."
                     onClick={() => setView('translator')}
                 /> */}
                 <FeatureTile
-                    icon={<CombineIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />}
-                    title="Create String Catalog"
-                    description="Combine multiple `.strings` (key-value) and `.stringsdict` (plurals) files into a single iOS String Catalog (`.xcstrings`) and Android XML files."
+                    icon={<CombineIcon className="w-6 h-6 text-red-400" />}
+                    title="Combine to String Catalog"
+                    description="Merge multiple `.strings` and `.stringsdict` files into a single, powerful `.xcstrings` catalog for iOS and generate corresponding Android XML files."
                     onClick={() => setView('combine')}
                 />
                 <FeatureTile
-                    icon={<ExtractIcon className="w-6 h-6 text-slate-500 dark:text-slate-400" />}
-                    title="Extract from Catalog"
-                    description="Deconstruct an iOS String Catalog (.xcstrings) file into individual .strings files and Android XML files for each language."
+                    icon={<ExtractIcon className="w-6 h-6 text-red-400" />}
+                    title="Extract from String Catalog"
+                    description="Deconstruct an `.xcstrings` catalog into its constituent `.strings` files and Android XML files for all supported languages."
                     onClick={() => setView('extract')}
                 />
             </div>

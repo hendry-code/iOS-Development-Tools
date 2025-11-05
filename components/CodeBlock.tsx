@@ -30,20 +30,20 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ content, language, fileNam
   };
 
   return (
-    <div className="relative bg-gray-800 rounded-lg h-full flex flex-col">
-      <div className="flex justify-between items-center px-4 py-2 bg-gray-700/50 rounded-t-lg">
-        <span className="text-sm text-gray-400">{language}</span>
+    <div className="relative bg-slate-800 rounded-lg h-full flex flex-col">
+      <div className="flex justify-between items-center px-4 py-2 bg-slate-900 rounded-t-lg">
+        <span className="text-sm text-slate-400">{language}</span>
         <div className="flex items-center space-x-2">
           <button
             onClick={handleCopy}
-            className="text-gray-400 hover:text-white transition-colors duration-200 p-1.5 rounded-md hover:bg-gray-600"
+            className="text-slate-400 hover:text-red-400 transition-colors duration-200 p-1.5 rounded-md hover:bg-slate-700"
             title="Copy to clipboard"
           >
             {copied ? <span className="text-xs">Copied!</span> : <CopyIcon className="w-4 h-4" />}
           </button>
           <button
             onClick={handleDownload}
-            className="text-gray-400 hover:text-white transition-colors duration-200 p-1.5 rounded-md hover:bg-gray-600"
+            className="text-slate-400 hover:text-red-400 transition-colors duration-200 p-1.5 rounded-md hover:bg-slate-700"
             title={`Download ${fileName}`}
           >
             <DownloadIcon className="w-4 h-4" />
