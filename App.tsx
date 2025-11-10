@@ -4,6 +4,7 @@ import { Dashboard } from './components/Dashboard';
 import { CombineStringsView } from './components/CombineStringsView';
 import { ExtractCatalogView } from './components/ExtractCatalogView';
 import { AITranslatorView } from './components/AITranslatorView';
+import { PropertiesConverterView } from './components/ConverterView';
 
 function App() {
   const [view, setView] = useState<ViewMode>('dashboard');
@@ -16,6 +17,8 @@ function App() {
         return <ExtractCatalogView onBack={() => setView('dashboard')} />;
       case 'translator':
         return <AITranslatorView onBack={() => setView('dashboard')} />;
+      case 'properties':
+        return <PropertiesConverterView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;

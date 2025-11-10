@@ -1,6 +1,6 @@
 import React from 'react';
 import { ViewMode } from '../types';
-import { SparklesIcon, CombineIcon, ExtractIcon } from './icons';
+import { SparklesIcon, CombineIcon, ExtractIcon, PropertiesIcon } from './icons';
 
 interface DashboardProps {
     setView: (view: ViewMode) => void;
@@ -42,7 +42,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                 </p>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {/* <FeatureTile
                     icon={<SparklesIcon className="w-6 h-6 text-red-400" />}
                     title="AI Translator"
@@ -60,6 +60,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
                     title="Extract from String Catalog"
                     description="Deconstruct an `.xcstrings` catalog into its constituent `.strings` files and Android XML files for all supported languages."
                     onClick={() => setView('extract')}
+                />
+                <FeatureTile
+                    icon={<PropertiesIcon className="w-6 h-6 text-red-400" />}
+                    title="Convert to .properties"
+                    description="Convert iOS (.strings, .stringsdict) and Android (.xml) localization files into Java `.properties` files for cross-platform use."
+                    onClick={() => setView('properties')}
                 />
             </div>
         </div>

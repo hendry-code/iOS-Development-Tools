@@ -332,3 +332,96 @@ export function generateAllStringsFiles(data: ParsedMultiLanguageStrings, langua
     }
     return allFiles;
 }
+
+/**
+ * Parses the content of an Android strings.xml file.
+ * @param content The XML string content of the strings.xml file.
+ * @returns A record of string keys to their corresponding values.
+ */
+export function parseAndroidXml(content: string): ParsedStrings {
+    const strings: ParsedStrings = {};
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(content, "application/xml");
+
+    if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
+        throw new Error("Invalid Android XML format.");
+    }
+
+    const stringNodes = xmlDoc.querySelectorAll('resources > string');
+    stringNodes.forEach(node => {
+        const key = node.getAttribute('name');
+        const value = node.innerHTML; // Use innerHTML to preserve tags like <b>
+        if (key && value) {
+            const plainTextValue = value.replace(/<[^>]*>/g, '');
+            strings[key] = plainTextValue;
+        }
+    });
+
+    const pluralsNodes = xmlDoc.querySelectorAll('resources > plurals');
+    pluralsNodes.forEach(node => {
+        const key = node.getAttribute('name');
+        if (!key) return;
+
+        const variations: Partial<Omit<PluralVariations, '_isPlural'>> = {};
+        const itemNodes = node.querySelectorAll('item');
+        let hasOther = false;
+
+        itemNodes.forEach(itemNode => {
+            const quantity = itemNode.getAttribute('quantity');
+            const value = itemNode.textContent;
+
+            if (quantity && value && ['zero', 'one', 'two', 'few', 'many', 'other'].includes(quantity)) {
+                variations[quantity as keyof typeof variations] = value;
+                if (quantity === 'other') hasOther = true;
+            }
+        });
+
+        if (hasOther) {
+            strings[key] = {
+                _isPlural: true,
+                ...variations,
+                other: variations.other!,
+            };
+        }
+    });
+
+    return strings;
+}
+
+
+function escapePropertiesKey(key: string): string {
+  return key.replace(/([=:\s])/g, '\\$1');
+}
+
+function escapePropertiesValue(value: string): string {
+  return value
+    .replace(/\\/g, '\\\\')
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')
+    .replace(/\t/g, '\\t');
+}
+
+/**
+ * Generates a Java .properties file content from parsed strings.
+ * @param data The parsed key-value string data.
+ * @returns A string representing the content of a .properties file.
+ */
+export function generatePropertiesFile(data: ParsedStrings): string {
+    const lines: string[] = [];
+    const sortedKeys = Object.keys(data).sort();
+
+    for (const key of sortedKeys) {
+        const value = data[key];
+        const escapedKey = escapePropertiesKey(key);
+
+        if (isPlural(value)) {
+            for (const [quantity, text] of Object.entries(value)) {
+                if (quantity === '_isPlural') continue;
+                lines.push(`${escapedKey}.${quantity} = ${escapePropertiesValue(text as string)}`);
+            }
+        } else {
+            lines.push(`${escapedKey} = ${escapePropertiesValue(value as string)}`);
+        }
+    }
+    return lines.join('\n');
+}
