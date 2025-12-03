@@ -1,7 +1,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { ParsedStrings } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let ai: GoogleGenAI | null = null;
+
+const getAI = () => {
+    if (!ai) {
+        const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your environment variables.");
+        }
+        ai = new GoogleGenAI({ apiKey });
+    }
+    return ai;
+};
 
 /**
  * Translates a set of strings from English to a list of target languages using the Gemini API.
@@ -43,7 +54,8 @@ ${JSON.stringify(englishStrings, null, 2)}
 `;
 
     try {
-        const response = await ai.models.generateContent({
+        const aiInstance = getAI();
+        const response = await aiInstance.models.generateContent({
             model: "gemini-2.5-flash",
             contents: prompt,
             config: {
@@ -51,7 +63,7 @@ ${JSON.stringify(englishStrings, null, 2)}
                 responseSchema: responseSchema,
             },
         });
-        
+
         const jsonText = response.text.trim();
         const parsedJson = JSON.parse(jsonText);
 
@@ -59,7 +71,7 @@ ${JSON.stringify(englishStrings, null, 2)}
         if (typeof parsedJson !== 'object' || parsedJson === null) {
             throw new Error("AI response is not a valid object.");
         }
-        
+
         return parsedJson;
 
     } catch (error: any) {
