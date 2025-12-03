@@ -44,12 +44,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/* <FeatureTile
-                    icon={<SparklesIcon className="w-6 h-6 text-red-400" />}
-                    title="AI Translator"
-                    description="Automatically translate your base language `.strings` file into multiple languages using AI. Export as individual files or a complete String Catalog."
-                    onClick={() => setView('translator')}
-                /> */}
+
                 <FeatureTile
                     icon={<CombineIcon className="w-6 h-6 text-red-400" />}
                     title="Combine to String Catalog"

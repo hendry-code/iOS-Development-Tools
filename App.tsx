@@ -4,7 +4,6 @@ import { ViewMode } from './types';
 import { Dashboard } from './components/Dashboard';
 import { CombineStringsView } from './components/CombineStringsView';
 import { ExtractCatalogView } from './components/ExtractCatalogView';
-import { AITranslatorView } from './components/AITranslatorView';
 import { PropertiesConverterView } from './components/ConverterView';
 import { FileEditorView } from './components/FileEditorView';
 import { KeyRenamerView } from './components/KeyRenamerView';
@@ -20,8 +19,6 @@ function App() {
         return <CombineStringsView onBack={() => setView('dashboard')} />;
       case 'extract':
         return <ExtractCatalogView onBack={() => setView('dashboard')} />;
-      case 'translator':
-        return <AITranslatorView onBack={() => setView('dashboard')} />;
       case 'properties':
         return <PropertiesConverterView onBack={() => setView('dashboard')} />;
       case 'editor':

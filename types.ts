@@ -18,8 +18,8 @@ export function isPlural(value: StringValue): value is PluralVariations {
 export type ParsedStrings = Record<string, StringValue>;
 
 export enum OutputFormat {
-  IOS = 'iOS String Catalog',
-  ANDROID = 'Android XML',
+    IOS = 'iOS String Catalog',
+    ANDROID = 'Android XML',
 }
 
 export interface LanguageFile {
@@ -36,4 +36,4 @@ export type ParsedMultiLanguageStrings = Record<string, Record<string, StringVal
 
 export type ConversionMode = 'stringsToCatalog' | 'catalogToStrings';
 
-export type ViewMode = 'dashboard' | 'combine' | 'extract' | 'translator' | 'properties' | 'editor' | 'renamer' | 'merge';
+export type ViewMode = 'dashboard' | 'combine' | 'extract' | 'properties' | 'editor' | 'renamer' | 'merge';
