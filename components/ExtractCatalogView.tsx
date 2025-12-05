@@ -7,7 +7,7 @@ import {
   generateAllAndroidXml,
 } from '../services/converter';
 import { OutputFormat, LanguageFile } from '../types';
-import { SaveIcon, FolderIcon, TrashIcon, ArrowLeftIcon, ExtractIcon } from './icons';
+import { Save, FolderOpen, Trash2, ArrowLeft, FileOutput } from 'lucide-react';
 
 const PROJECT_STORAGE_KEY = 'stringsExporterProject_extract';
 
@@ -105,33 +105,35 @@ export const ExtractCatalogView: React.FC<ExtractCatalogViewProps> = ({ onBack }
   };
 
   return (
-    <div className="w-full max-w-7xl h-[90vh] min-h-[700px] flex flex-col bg-slate-900/50 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-700">
-      <header className="flex items-center justify-between px-4 py-3 border-b border-slate-700 flex-shrink-0">
-        <div className="flex-1">
-          <button onClick={onBack} className="flex items-center space-x-2 text-slate-400 hover:text-red-500 transition-colors">
-             <ArrowLeftIcon className="w-5 h-5" />
-             <span className="text-sm font-semibold">Dashboard</span>
+    <div className="flex flex-col h-full space-y-6 p-8">
+      <header className="flex items-center justify-between pb-4 border-b border-gray-700/50 flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <button onClick={onBack} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors group" title="Back to Dashboard">
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
           </button>
-        </div>
-        <div className="flex-1 flex justify-center">
-            <div className="flex items-center space-x-2">
-                <ExtractIcon className="w-5 h-5 text-red-500" />
-                <h1 className="text-md font-bold text-slate-200">Extract from Catalog</h1>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-500/20 rounded-lg">
+              <FileOutput className="w-5 h-5 text-purple-400" />
             </div>
+            <div>
+              <h1 className="text-lg font-bold text-white">Extract Catalog</h1>
+              <p className="text-xs text-gray-400">Extract strings from .xcstrings</p>
+            </div>
+          </div>
         </div>
-        <div className="flex-1 flex justify-end items-center space-x-2">
+        <div className="flex items-center space-x-2">
           <span className="text-xs text-green-400 font-medium transition-opacity duration-300 w-12 text-right">{saveStatus}</span>
-          <button onClick={handleSaveProject} title="Save Project" className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-700/50 rounded-lg transition-colors"><SaveIcon className="w-5 h-5" /></button>
-          <button onClick={handleLoadProject} disabled={!hasSavedProject} title="Load Project" className="p-2 text-slate-400 hover:text-red-500 hover:bg-slate-700/50 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><FolderIcon className="w-5 h-5" /></button>
-          <button onClick={handleClearProject} title="Clear Project" className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><TrashIcon className="w-5 h-5" /></button>
+          <button onClick={handleSaveProject} title="Save Project" className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors"><Save size={18} /></button>
+          <button onClick={handleLoadProject} disabled={!hasSavedProject} title="Load Project" className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors disabled:opacity-40 disabled:cursor-not-allowed"><FolderOpen size={18} /></button>
+          <button onClick={handleClearProject} title="Clear Project" className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"><Trash2 size={18} /></button>
         </div>
       </header>
 
-      <div className="flex-grow p-4 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
+      <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
         <InputPanel
           conversionMode="catalogToStrings"
           files={[]}
-          onFilesChange={() => {}}
+          onFilesChange={() => { }}
           catalogFile={catalogFile}
           onCatalogFileChange={handleCatalogFileChange}
           onConvert={() => handleConvert()}

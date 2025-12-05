@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --mac-bg: #1e1e1e;
+  --mac-sidebar: rgba(40, 40, 40, 0.6);
+  --mac-card: rgba(50, 50, 50, 0.4);
+  --mac-border: rgba(255, 255, 255, 0.1);
+  --mac-text: #f5f5f7;
+  --mac-text-secondary: #86868b;
+  --mac-highlight: #007aff;
+
+  /* Traffic Lights */
+  --traffic-close: #ff5f57;
+  --traffic-minimize: #febc2e;
+  --traffic-maximize: #28c840;
+}
+
+@layer base {
+  body {
+    @apply antialiased text-slate-100;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+    background-image: url('https://4kwallpapers.com/images/wallpapers/macos-monterey-stock-black-dark-mode-layers-5k-4480x2520-5889.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    overflow-x: hidden;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-gray-900/40 backdrop-blur-xl border border-white/10 shadow-2xl;
+  }
+
+  .glass-card {
+    @apply bg-gray-800/30 backdrop-blur-lg border border-white/5 shadow-lg hover:bg-gray-800/40 transition-all duration-300;
+  }
+
+  .mac-btn {
+    @apply px-4 py-2 rounded-lg font-medium transition-all duration-200 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .mac-input {
+    @apply bg-gray-900/50 border border-gray-700/50 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200;
+  }
+
+  /* Custom Scrollbar */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-gray-600/50 rounded-full hover:bg-gray-500/70 transition-colors;
+  }
+}
+
+/* Animations */
+@keyframes windowOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-window-open {
+  animation: windowOpen 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+
+@layer components {
+  .mac-btn-primary {
+    @apply bg-blue-600 text-white border-transparent hover:bg-blue-500;
+  }
+}

@@ -1,17 +1,16 @@
-
 import React, { useState, useRef } from 'react';
-import { ArrowLeftIcon, CloseIcon, KeyIcon, TrashIcon, UploadIcon, SparklesIcon } from './icons';
+import { ArrowLeft, X, Type, Trash2, Upload, Sparkles, FileText } from 'lucide-react';
 import { parseStringsFile } from '../services/converter';
 import { CodeBlock } from './CodeBlock';
 import { ParsedStrings } from '../types';
 
 interface KeyRenamerViewProps {
-  onBack: () => void;
+    onBack: () => void;
 }
 
 interface LoadedFile {
-  name: string;
-  content: string;
+    name: string;
+    content: string;
 }
 
 const readFile = (file: File): Promise<LoadedFile> => {
@@ -30,7 +29,7 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
     const [sourceFile, setSourceFile] = useState<LoadedFile | null>(null);
     const [keyCompFile, setKeyCompFile] = useState<LoadedFile | null>(null);
     const [valCompFiles, setValCompFiles] = useState<LoadedFile[]>([]);
-    
+
     const [outputContent, setOutputContent] = useState('');
     const [renameLog, setRenameLog] = useState<string[]>([]);
     const [error, setError] = useState<string | null>(null);
@@ -109,7 +108,7 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
 
                 const logs: string[] = [];
                 const newSourceData: ParsedStrings = {};
-                
+
                 // Helper to escape string for .strings file output
                 const escape = (str: string) => str.replace(/"/g, '\\"').replace(/\n/g, '\\n');
 
@@ -125,7 +124,7 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                         for (const valCompData of valCompDatas) {
                             // Find matching value
                             const foundEntry = Object.entries(valCompData).find(([_, val]) => val === intermediateValue);
-                            
+
                             if (foundEntry) {
                                 newKey = foundEntry[0];
                                 foundMatch = true;
@@ -136,9 +135,9 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                     }
 
                     if (!foundMatch && intermediateValue) {
-                         // logs.push(`Skipped "${srcKey}": Value found in comparison file but not matched in value files.`);
+                        // logs.push(`Skipped "${srcKey}": Value found in comparison file but not matched in value files.`);
                     } else if (!intermediateValue) {
-                         // logs.push(`Skipped "${srcKey}": Key not found in comparison file.`);
+                        // logs.push(`Skipped "${srcKey}": Key not found in comparison file.`);
                     }
 
                     newSourceData[newKey] = srcValue;
@@ -161,139 +160,141 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
     };
 
     return (
-        <div className="w-full max-w-7xl h-[90vh] min-h-[700px] flex flex-col bg-slate-900/50 backdrop-blur-2xl rounded-2xl shadow-2xl border border-slate-700">
+        <div className="flex flex-col h-full space-y-6 p-8">
             {/* Header */}
-            <header className="flex items-center justify-between px-4 py-3 border-b border-slate-700 flex-shrink-0">
-                <div className="flex-1">
-                    <button onClick={onBack} className="flex items-center space-x-2 text-slate-400 hover:text-red-500 transition-colors">
-                        <ArrowLeftIcon className="w-5 h-5" />
-                        <span className="text-sm font-semibold">Dashboard</span>
+            <header className="flex items-center justify-between pb-4 border-b border-gray-700/50 flex-shrink-0">
+                <div className="flex items-center gap-4">
+                    <button onClick={onBack} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors group" title="Back to Dashboard">
+                        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     </button>
-                </div>
-                <div className="flex-1 flex justify-center">
-                    <div className="flex items-center space-x-2">
-                        <KeyIcon className="w-5 h-5 text-red-500" />
-                        <h1 className="text-md font-bold text-slate-200">Key Renamer</h1>
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-pink-500/20 rounded-lg">
+                            <Type className="w-5 h-5 text-pink-400" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold text-white">Key Renamer</h1>
+                            <p className="text-xs text-gray-400">Batch rename keys across files</p>
+                        </div>
                     </div>
                 </div>
-                <div className="flex-1 flex justify-end">
-                     <button onClick={handleClearAll} title="Clear All" className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
-                        <TrashIcon className="w-5 h-5" />
+                <div className="flex items-center space-x-2">
+                    <button onClick={handleClearAll} title="Clear All" className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors">
+                        <Trash2 size={18} />
                     </button>
                 </div>
             </header>
 
-            <div className="flex-grow p-4 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-hidden">
+            <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
                 {/* Inputs Column */}
-                <div className="flex flex-col gap-4 overflow-y-auto pr-2">
-                    
+                <div className="flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+
                     {/* Source File Input */}
-                    <div className="bg-black/30 p-4 rounded-lg border border-slate-700 shadow-lg">
-                        <h2 className="text-sm font-semibold text-slate-100 mb-2 flex justify-between">
-                            <span>1. Source File</span>
-                            <span className="text-xs text-slate-400 font-normal self-center">(e.g. albanian.strings)</span>
+                    <div className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg">
+                        <h2 className="text-sm font-semibold text-gray-300 mb-3 flex justify-between items-center">
+                            <span className="flex items-center gap-2"><FileText size={14} className="text-blue-400" /> 1. Source File</span>
+                            <span className="text-xs text-gray-500 font-normal">(e.g. albanian.strings)</span>
                         </h2>
                         {sourceFile ? (
-                             <div className="flex items-center justify-between p-2 bg-slate-800 rounded-md border border-slate-600">
-                                <span className="text-sm font-mono text-slate-300 truncate pr-2">{sourceFile.name}</span>
-                                <button onClick={() => setSourceFile(null)} className="text-slate-400 hover:text-red-500"><CloseIcon className="w-4 h-4"/></button>
+                            <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                                <span className="text-sm font-mono text-gray-300 truncate pr-2">{sourceFile.name}</span>
+                                <button onClick={() => setSourceFile(null)} className="text-gray-500 hover:text-red-400 transition-colors"><X size={16} /></button>
                             </div>
                         ) : (
-                            <button onClick={() => sourceInputRef.current?.click()} className="w-full flex items-center justify-center p-4 border-2 border-dashed border-slate-600 rounded-md hover:bg-slate-800/50 hover:border-red-500/50 transition-all text-slate-400 text-sm">
-                                <UploadIcon className="w-4 h-4 mr-2"/> Upload Source .strings
+                            <button onClick={() => sourceInputRef.current?.click()} className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-700 rounded-xl hover:bg-gray-800/50 hover:border-blue-500/50 transition-all text-gray-400 text-sm group">
+                                <Upload className="w-4 h-4 mr-2 group-hover:text-blue-400 transition-colors" /> Upload Source .strings
                             </button>
                         )}
                         <input type="file" ref={sourceInputRef} onChange={handleSourceUpload} accept=".strings" className="hidden" />
                     </div>
 
                     {/* Key Comparable Input */}
-                    <div className="bg-black/30 p-4 rounded-lg border border-slate-700 shadow-lg">
-                        <h2 className="text-sm font-semibold text-slate-100 mb-2 flex justify-between">
-                            <span>2. Key-Comparable File</span>
-                            <span className="text-xs text-slate-400 font-normal self-center">(e.g. OldLocalizable.strings)</span>
+                    <div className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg">
+                        <h2 className="text-sm font-semibold text-gray-300 mb-1 flex justify-between items-center">
+                            <span className="flex items-center gap-2"><FileText size={14} className="text-purple-400" /> 2. Key-Comparable File</span>
+                            <span className="text-xs text-gray-500 font-normal">(e.g. OldLocalizable.strings)</span>
                         </h2>
-                        <p className="text-xs text-slate-500 mb-2">Used to map Source Keys to values.</p>
+                        <p className="text-xs text-gray-500 mb-3 ml-6">Maps Source Keys to values.</p>
                         {keyCompFile ? (
-                             <div className="flex items-center justify-between p-2 bg-slate-800 rounded-md border border-slate-600">
-                                <span className="text-sm font-mono text-slate-300 truncate pr-2">{keyCompFile.name}</span>
-                                <button onClick={() => setKeyCompFile(null)} className="text-slate-400 hover:text-red-500"><CloseIcon className="w-4 h-4"/></button>
+                            <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                                <span className="text-sm font-mono text-gray-300 truncate pr-2">{keyCompFile.name}</span>
+                                <button onClick={() => setKeyCompFile(null)} className="text-gray-500 hover:text-red-400 transition-colors"><X size={16} /></button>
                             </div>
                         ) : (
-                            <button onClick={() => keyCompInputRef.current?.click()} className="w-full flex items-center justify-center p-4 border-2 border-dashed border-slate-600 rounded-md hover:bg-slate-800/50 hover:border-red-500/50 transition-all text-slate-400 text-sm">
-                                <UploadIcon className="w-4 h-4 mr-2"/> Upload Key-Comparable
+                            <button onClick={() => keyCompInputRef.current?.click()} className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-700 rounded-xl hover:bg-gray-800/50 hover:border-purple-500/50 transition-all text-gray-400 text-sm group">
+                                <Upload className="w-4 h-4 mr-2 group-hover:text-purple-400 transition-colors" /> Upload Key-Comparable
                             </button>
                         )}
                         <input type="file" ref={keyCompInputRef} onChange={handleKeyCompUpload} accept=".strings" className="hidden" />
                     </div>
 
                     {/* Value Comparable Inputs */}
-                    <div className="bg-black/30 p-4 rounded-lg border border-slate-700 shadow-lg flex-grow flex flex-col">
-                        <h2 className="text-sm font-semibold text-slate-100 mb-2 flex justify-between">
-                            <span>3. Value-Comparable Files</span>
-                            <span className="text-xs text-slate-400 font-normal self-center">(NewLocalizable files)</span>
+                    <div className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg flex-grow flex flex-col">
+                        <h2 className="text-sm font-semibold text-gray-300 mb-1 flex justify-between items-center">
+                            <span className="flex items-center gap-2"><FileText size={14} className="text-green-400" /> 3. Value-Comparable Files</span>
+                            <span className="text-xs text-gray-500 font-normal">(NewLocalizable files)</span>
                         </h2>
-                         <p className="text-xs text-slate-500 mb-2">Used to find new keys based on matching values.</p>
-                        
-                        <div className="flex-grow overflow-y-auto space-y-2 mb-2 min-h-[100px] max-h-[300px]">
+                        <p className="text-xs text-gray-500 mb-3 ml-6">Finds new keys based on matching values.</p>
+
+                        <div className="flex-grow overflow-y-auto space-y-2 mb-3 min-h-[100px] max-h-[300px] custom-scrollbar pr-1">
                             {valCompFiles.map(f => (
-                                <div key={f.name} className="flex items-center justify-between p-2 bg-slate-800 rounded-md border border-slate-600">
-                                    <span className="text-sm font-mono text-slate-300 truncate pr-2">{f.name}</span>
-                                    <button onClick={() => removeValCompFile(f.name)} className="text-slate-400 hover:text-red-500"><CloseIcon className="w-4 h-4"/></button>
+                                <div key={f.name} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
+                                    <span className="text-sm font-mono text-gray-300 truncate pr-2">{f.name}</span>
+                                    <button onClick={() => removeValCompFile(f.name)} className="text-gray-500 hover:text-red-400 transition-colors"><X size={16} /></button>
                                 </div>
                             ))}
-                            {valCompFiles.length === 0 && <p className="text-xs text-slate-500 text-center py-4">No files uploaded yet.</p>}
+                            {valCompFiles.length === 0 && <p className="text-xs text-gray-600 text-center py-8 border-2 border-dashed border-gray-800 rounded-lg">No files uploaded yet.</p>}
                         </div>
 
-                        <button onClick={() => valCompInputRef.current?.click()} className="w-full flex items-center justify-center p-3 border border-slate-600 bg-slate-800/50 rounded-md hover:bg-slate-700 transition-all text-slate-300 text-sm">
-                            <UploadIcon className="w-4 h-4 mr-2"/> Add Files
+                        <button onClick={() => valCompInputRef.current?.click()} className="w-full flex items-center justify-center p-3 border border-gray-700 bg-gray-800/50 rounded-lg hover:bg-gray-700 transition-all text-gray-300 text-sm">
+                            <Upload className="w-4 h-4 mr-2" /> Add Files
                         </button>
                         <input type="file" ref={valCompInputRef} onChange={handleValCompUpload} accept=".strings" multiple className="hidden" />
                     </div>
-                    
-                    <button 
-                        onClick={processRenaming} 
+
+                    <button
+                        onClick={processRenaming}
                         disabled={isLoading || !sourceFile || !keyCompFile || valCompFiles.length === 0}
-                        className="w-full py-3 bg-red-600 hover:bg-red-700 disabled:bg-slate-800 disabled:text-slate-500 text-white font-semibold rounded-lg shadow-md transition-all flex items-center justify-center space-x-2"
+                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center space-x-2 active:scale-95"
                     >
                         {isLoading ? (
                             <span>Processing...</span>
                         ) : (
                             <>
-                                <SparklesIcon className="w-5 h-5" />
+                                <Sparkles className="w-5 h-5" />
                                 <span>Process Renaming</span>
                             </>
                         )}
                     </button>
-                     {error && <p className="text-sm text-red-400 mt-2 text-center bg-red-900/20 p-2 rounded border border-red-900/50">{error}</p>}
+                    {error && <p className="text-sm text-red-400 mt-2 text-center bg-red-500/10 p-3 rounded-lg border border-red-500/20">{error}</p>}
 
                 </div>
 
                 {/* Output Column */}
-                <div className="flex flex-col bg-black/30 p-4 rounded-lg border border-slate-700 shadow-lg overflow-hidden">
-                    <h2 className="text-lg font-semibold text-slate-100 mb-3 flex-shrink-0">Output & Logs</h2>
-                    
+                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg overflow-hidden">
+                    <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Output & Logs</h2>
+
                     {outputContent ? (
-                        <div className="flex flex-col h-full overflow-hidden">
-                            <div className="flex-1 min-h-0 mb-4">
-                                <CodeBlock 
-                                    content={outputContent} 
-                                    language="strings" 
-                                    fileName={`Renamed_${sourceFile?.name || 'result.strings'}`} 
+                        <div className="flex flex-col h-full overflow-hidden gap-4">
+                            <div className="flex-1 min-h-0 rounded-lg border border-gray-700/50 bg-gray-900/50 overflow-hidden">
+                                <CodeBlock
+                                    content={outputContent}
+                                    language="strings"
+                                    fileName={`Renamed_${sourceFile?.name || 'result.strings'}`}
                                 />
                             </div>
-                            <div className="h-1/3 min-h-[150px] flex flex-col bg-slate-900/50 rounded-lg border border-slate-700 overflow-hidden">
-                                <div className="px-3 py-2 bg-slate-800 border-b border-slate-700 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            <div className="h-1/3 min-h-[150px] flex flex-col bg-gray-900/30 rounded-lg border border-gray-700/50 overflow-hidden">
+                                <div className="px-3 py-2 bg-gray-800/50 border-b border-gray-700/50 text-xs font-semibold text-gray-400 uppercase tracking-wider">
                                     Change Log
                                 </div>
-                                <div className="flex-1 overflow-y-auto p-3 font-mono text-xs text-slate-300 space-y-1">
+                                <div className="flex-1 overflow-y-auto p-3 font-mono text-xs text-gray-400 space-y-1 custom-scrollbar">
                                     {renameLog.map((log, i) => (
-                                        <div key={i} className="border-b border-slate-800/50 pb-1 last:border-0">{log}</div>
+                                        <div key={i} className="border-b border-gray-800/50 pb-1 last:border-0">{log}</div>
                                     ))}
                                 </div>
                             </div>
                         </div>
                     ) : (
-                        <div className="flex items-center justify-center h-full text-slate-400 bg-slate-900/50 rounded-lg">
+                        <div className="flex items-center justify-center h-full text-gray-500 bg-gray-900/30 rounded-lg border border-gray-800 border-dashed">
                             <p>Upload files and process to see results.</p>
                         </div>
                     )}

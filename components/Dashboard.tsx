@@ -1,87 +1,104 @@
-
 import React from 'react';
 import { ViewMode } from '../types';
-import { SparklesIcon, CombineIcon, ExtractIcon, PropertiesIcon, EditIcon, KeyIcon } from './icons';
+import {
+    Combine,
+    FileOutput,
+    FileJson,
+    FileEdit,
+    Type,
+    Merge,
+    ArrowRight
+} from 'lucide-react';
 
 interface DashboardProps {
     setView: (view: ViewMode) => void;
 }
 
-const FeatureTile: React.FC<{
-    icon: React.ReactNode;
-    title: string;
-    description: string;
-    onClick: () => void;
-}> = ({ icon, title, description, onClick }) => {
-    return (
-        <button
-            onClick={onClick}
-            className="group relative w-full h-full p-6 text-left bg-slate-900/70 backdrop-blur-lg border border-slate-700 rounded-lg shadow-lg transition-all duration-300 ease-in-out hover:bg-slate-800/90 hover:border-red-500/70 hover:shadow-xl hover:shadow-red-500/20 hover:-translate-y-1"
-        >
-            <div className="flex items-center justify-center w-12 h-12 bg-red-900/50 border border-red-500/30 rounded-lg group-hover:bg-red-800/70 transition-all duration-300">
-                {icon}
-            </div>
-            <h3 className="mt-4 text-lg font-bold text-slate-100">{title}</h3>
-            <p className="mt-2 text-sm text-slate-400">{description}</p>
-            <div className="absolute bottom-6 right-6 text-sm font-semibold text-red-500 opacity-0 group-hover:opacity-100 transform translate-x-4 group-hover:translate-x-0 transition-all duration-300">
-                Get Started &rarr;
-            </div>
-        </button>
-    );
-};
+export function Dashboard({ setView }: DashboardProps) {
+    const tools = [
+        {
+            id: 'combine',
+            title: 'Combine Strings',
+            description: 'Merge multiple .strings files into a single file',
+            icon: Combine,
+            color: 'bg-blue-500',
+        },
+        {
+            id: 'extract',
+            title: 'Extract Catalog',
+            description: 'Extract strings from .xcstrings catalog files',
+            icon: FileOutput,
+            color: 'bg-purple-500',
+        },
+        {
+            id: 'properties',
+            title: 'Properties Converter',
+            description: 'Convert .properties files to .strings format',
+            icon: FileJson,
+            color: 'bg-green-500',
+        },
+        {
+            id: 'editor',
+            title: 'File Editor',
+            description: 'Edit and manage your localization files',
+            icon: FileEdit,
+            color: 'bg-orange-500',
+        },
+        {
+            id: 'renamer',
+            title: 'Key Renamer',
+            description: 'Batch rename keys across multiple files',
+            icon: Type,
+            color: 'bg-pink-500',
+        },
+        {
+            id: 'merge',
+            title: 'Merge Strings',
+            description: 'Smart merge with conflict resolution',
+            icon: Merge,
+            color: 'bg-indigo-500',
+        },
+    ];
 
-
-export const Dashboard: React.FC<DashboardProps> = ({ setView }) => {
     return (
-        <div className="w-full max-w-5xl">
-            <header className="text-center mb-12">
-                <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-100 tracking-tight">
-                    iOS & Android Localization Tools
+        <div className="w-full min-h-screen p-8 flex flex-col items-center justify-center animate-window-open">
+            <header className="text-center mb-16">
+                <h1 className="text-5xl sm:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 tracking-tight mb-6 drop-shadow-2xl">
+                    iOS Development Tools
                 </h1>
-                <p className="mt-4 text-lg text-slate-400 max-w-3xl mx-auto">
-                    A powerful suite of tools designed to accelerate your iOS and Android development workflow, from localization management to AI-powered translations.
+                <p className="text-xl text-slate-400 max-w-2xl mx-auto font-light leading-relaxed">
+                    Professional localization and development utilities.
                 </p>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
+                {tools.map((tool) => {
+                    const Icon = tool.icon;
+                    return (
+                        <button
+                            key={tool.id}
+                            onClick={() => setView(tool.id as ViewMode)}
+                            className="group relative p-4 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:bg-gray-800 transition-all duration-300 text-left hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/10"
+                        >
+                            <div className={`w-12 h-12 rounded-lg ${tool.color} flex items-center justify-center mb-4 shadow-lg group-hover:shadow-xl transition-all`}>
+                                <Icon className="text-white" size={24} />
+                            </div>
 
-                <FeatureTile
-                    icon={<CombineIcon className="w-6 h-6 text-red-400" />}
-                    title="Combine to String Catalog"
-                    description="Merge multiple `.strings` and `.stringsdict` files into a single, powerful `.xcstrings` catalog for iOS and generate corresponding Android XML files."
-                    onClick={() => setView('combine')}
-                />
-                <FeatureTile
-                    icon={<CombineIcon className="w-6 h-6 text-red-400" />}
-                    title="Merge Strings into Catalog"
-                    description="Merge translations from `.strings` files into an existing `.xcstrings` catalog for matching keys."
-                    onClick={() => setView('merge')}
-                />
-                <FeatureTile
-                    icon={<ExtractIcon className="w-6 h-6 text-red-400" />}
-                    title="Extract from String Catalog"
-                    description="Deconstruct an `.xcstrings` catalog into its constituent `.strings` files and Android XML files for all supported languages."
-                    onClick={() => setView('extract')}
-                />
-                <FeatureTile
-                    icon={<PropertiesIcon className="w-6 h-6 text-red-400" />}
-                    title="Convert to .properties"
-                    description="Convert iOS (.strings, .stringsdict) and Android (.xml) localization files into Java `.properties` files for cross-platform use."
-                    onClick={() => setView('properties')}
-                />
-                <FeatureTile
-                    icon={<KeyIcon className="w-6 h-6 text-red-400" />}
-                    title="Key Renamer"
-                    description="Rename keys in a .strings file by cross-referencing values through a sequence of comparable files."
-                    onClick={() => setView('renamer')}
-                />
-                <FeatureTile
-                    icon={<EditIcon className="w-6 h-6 text-red-400" />}
-                    title="File Editor"
-                    description="A lightweight editor for localization files. Upload, edit, find, replace, and download your `.strings`, `.xml`, `.properties` and other files."
-                    onClick={() => setView('editor')}
-                />
+                            <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-blue-400 transition-colors">
+                                {tool.title}
+                            </h3>
+
+                            <p className="text-sm text-gray-400 mb-4 line-clamp-2">
+                                {tool.description}
+                            </p>
+
+                            <div className="flex items-center text-xs font-medium text-gray-500 group-hover:text-blue-400 transition-colors">
+                                Open Tool <ArrowRight size={12} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );
-};
+}

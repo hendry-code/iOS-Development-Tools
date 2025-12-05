@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { ViewMode } from './types';
+
 import { Dashboard } from './components/Dashboard';
 import { CombineStringsView } from './components/CombineStringsView';
 import { ExtractCatalogView } from './components/ExtractCatalogView';
@@ -34,9 +35,9 @@ function App() {
   };
 
   return (
-    <main className="w-full min-h-screen flex items-center justify-center p-4 sm:p-8">
+    <div className="h-screen w-full bg-transparent text-slate-100 font-sans selection:bg-red-500/30 overflow-hidden">
       {renderView()}
-    </main>
+    </div>
   );
 }
 
