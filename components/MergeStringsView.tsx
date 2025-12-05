@@ -106,7 +106,7 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
     };
 
     return (
-        <div className="flex flex-col h-full space-y-6 p-8">
+        <div className="flex flex-col min-h-screen md:h-full space-y-6 p-4 md:p-8">
             <header className="flex items-center justify-between pb-4 border-b border-gray-700/50 flex-shrink-0">
                 <div className="flex items-center gap-4">
                     <button onClick={onBack} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors group" title="Back to Dashboard">
@@ -126,7 +126,7 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
 
             <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
                 {/* Input Panel */}
-                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl h-full overflow-hidden border border-gray-700/50 shadow-lg space-y-4">
+                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl min-h-[500px] md:h-full md:overflow-hidden border border-gray-700/50 shadow-lg space-y-4">
 
                     {/* Source Catalog Section */}
                     <div className="flex-shrink-0">
@@ -212,7 +212,7 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
                 </div>
 
                 {/* Output Panel */}
-                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl h-full overflow-hidden border border-gray-700/50 shadow-lg">
+                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl min-h-[400px] md:h-full md:overflow-hidden border border-gray-700/50 shadow-lg">
                     <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Output (.xcstrings)</h2>
                     <div className="flex-grow relative bg-gray-900/50 rounded-lg shadow-inner border border-gray-700/50 overflow-hidden">
                         {mergedOutput ? (

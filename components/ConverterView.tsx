@@ -114,7 +114,7 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
     };
 
     return (
-        <div className="flex flex-col h-full space-y-6 p-8">
+        <div className="flex flex-col min-h-screen md:h-full space-y-6 p-4 md:p-8">
             <header className="flex items-center justify-between pb-4 border-b border-gray-700/50 flex-shrink-0">
                 <div className="flex items-center gap-4">
                     <button onClick={onBack} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors group" title="Back to Dashboard">
@@ -139,7 +139,7 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
 
             <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
                 {/* Input Panel */}
-                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl h-full overflow-hidden border border-gray-700/50 shadow-xl">
+                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl min-h-[400px] md:h-full md:overflow-hidden border border-gray-700/50 shadow-xl">
                     <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Input Files</h2>
                     <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-800 p-2 space-y-2 min-h-[150px] custom-scrollbar">
                         {inputFiles.length === 0 ? (
@@ -172,7 +172,7 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
                 </div>
 
                 {/* Output Panel */}
-                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl h-full overflow-hidden border border-gray-700/50 shadow-xl">
+                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl min-h-[400px] md:h-full md:overflow-hidden border border-gray-700/50 shadow-xl">
                     <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Output (.properties)</h2>
                     <div className="flex-grow overflow-hidden rounded-lg border border-gray-700/50 bg-gray-900/50">
                         {outputContent ? (

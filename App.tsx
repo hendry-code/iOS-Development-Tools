@@ -35,7 +35,7 @@ function App() {
   };
 
   return (
-    <div className="h-screen w-full bg-transparent text-slate-100 font-sans selection:bg-red-500/30 overflow-hidden">
+    <div className="min-h-screen w-full bg-transparent text-slate-100 font-sans selection:bg-red-500/30 overflow-x-hidden">
       {renderView()}
     </div>
   );

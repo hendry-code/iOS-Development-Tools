@@ -61,7 +61,7 @@ export function Dashboard({ setView }: DashboardProps) {
     ];
 
     return (
-        <div className="w-full min-h-screen p-8 flex flex-col items-center justify-center animate-window-open">
+        <div className="w-full min-h-screen p-4 md:p-8 flex flex-col items-center justify-center animate-window-open">
             <header className="text-center mb-16">
                 <h1 className="text-5xl sm:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 tracking-tight mb-6 drop-shadow-2xl">
                     iOS Development Tools

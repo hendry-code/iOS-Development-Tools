@@ -160,7 +160,7 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
     };
 
     return (
-        <div className="flex flex-col h-full space-y-6 p-8">
+        <div className="flex flex-col min-h-screen md:h-full space-y-6 p-4 md:p-8">
             {/* Header */}
             <header className="flex items-center justify-between pb-4 border-b border-gray-700/50 flex-shrink-0">
                 <div className="flex items-center gap-4">
@@ -186,7 +186,7 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
 
             <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
                 {/* Inputs Column */}
-                <div className="flex flex-col gap-4 overflow-y-auto pr-2 custom-scrollbar">
+                <div className="flex flex-col gap-4 md:overflow-y-auto pr-2 custom-scrollbar">
 
                     {/* Source File Input */}
                     <div className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg">
@@ -270,11 +270,11 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                 </div>
 
                 {/* Output Column */}
-                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg overflow-hidden">
+                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg md:overflow-hidden">
                     <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Output & Logs</h2>
 
                     {outputContent ? (
-                        <div className="flex flex-col h-full overflow-hidden gap-4">
+                        <div className="flex flex-col h-[500px] md:h-full md:overflow-hidden gap-4">
                             <div className="flex-1 min-h-0 rounded-lg border border-gray-700/50 bg-gray-900/50 overflow-hidden">
                                 <CodeBlock
                                     content={outputContent}
