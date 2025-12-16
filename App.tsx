@@ -9,6 +9,7 @@ import { PropertiesConverterView } from './components/ConverterView';
 import { FileEditorView } from './components/FileEditorView';
 import { KeyRenamerView } from './components/KeyRenamerView';
 import { MergeStringsView } from './components/MergeStringsView';
+import { WordCountView } from './components/WordCountView';
 
 
 function App() {
@@ -28,6 +29,8 @@ function App() {
         return <KeyRenamerView onBack={() => setView('dashboard')} />;
       case 'merge':
         return <MergeStringsView onBack={() => setView('dashboard')} />;
+      case 'wordcount':
+        return <WordCountView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;

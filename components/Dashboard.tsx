@@ -7,7 +7,8 @@ import {
     FileEdit,
     Type,
     Merge,
-    ArrowRight
+    ArrowRight,
+    Calculator
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -57,6 +58,13 @@ export function Dashboard({ setView }: DashboardProps) {
             description: 'Smart merge with conflict resolution',
             icon: Merge,
             color: 'bg-indigo-500',
+        },
+        {
+            id: 'wordcount',
+            title: 'Words Count',
+            description: 'Count words in .xcstrings, .strings, .xml, and .stringsdict files',
+            icon: Calculator,
+            color: 'bg-teal-500',
         },
     ];
 

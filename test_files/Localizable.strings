@@ -1,0 +1,11 @@
+
+/* 
+  Localizable.strings
+  Test Project
+*/
+
+"welcome_message" = "Welcome to our application!";
+"login_button" = "Log In";
+"logout_button" = "Log Out";
+"item_count" = "You have %d items in your cart.";
+"escaped_quote" = "This has an \"escaped\" quote.";
