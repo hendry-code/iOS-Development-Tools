@@ -81,29 +81,29 @@ export function Dashboard({ setView }: DashboardProps) {
                 </p>
             </header>
 
-            <div className="w-full max-w-7xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 px-4">
+            <div className="w-full max-w-7xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4">
                 {tools.map((tool) => {
                     const Icon = tool.icon;
                     return (
                         <button
                             key={tool.id}
                             onClick={() => setView(tool.id as ViewMode)}
-                            className="group relative p-4 rounded-2xl bg-slate-800/40 border border-slate-700 hover:bg-slate-800/60 transition-all duration-300 text-left hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/10 backdrop-blur-sm"
+                            className="group relative p-3 rounded-2xl bg-slate-800/40 border border-slate-700 hover:bg-slate-800/60 transition-all duration-300 text-left hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/10 backdrop-blur-sm"
                         >
-                            <div className={`w-12 h-12 rounded-xl ${tool.color} bg-opacity-20 flex items-center justify-center mb-4 shadow-lg group-hover:shadow-xl transition-all ring-1 ring-white/10`}>
-                                <Icon className="text-white" size={24} />
+                            <div className={`w-10 h-10 rounded-lg ${tool.color} bg-opacity-20 flex items-center justify-center mb-3 shadow-lg group-hover:shadow-xl transition-all ring-1 ring-white/10`}>
+                                <Icon className="text-white" size={20} />
                             </div>
 
-                            <h3 className="text-lg font-semibold text-slate-100 mb-1 group-hover:text-indigo-400 transition-colors">
+                            <h3 className="text-base font-semibold text-slate-100 mb-1 group-hover:text-indigo-400 transition-colors">
                                 {tool.title}
                             </h3>
 
-                            <p className="text-sm text-slate-400 mb-4 line-clamp-2">
+                            <p className="text-xs text-slate-400 mb-3 line-clamp-2">
                                 {tool.description}
                             </p>
 
-                            <div className="flex items-center text-xs font-medium text-slate-500 group-hover:text-indigo-400 transition-colors">
-                                Open Tool <ArrowRight size={12} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                            <div className="flex items-center text-[10px] font-medium text-slate-500 group-hover:text-indigo-400 transition-colors">
+                                Open Tool <ArrowRight size={10} className="ml-1 group-hover:translate-x-1 transition-transform" />
                             </div>
                         </button>
                     );
