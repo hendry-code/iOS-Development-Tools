@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, X, Type, Trash2, Upload, Sparkles, FileText } from 'lucide-react';
+import { ArrowLeft, X, Type, Trash2, Upload, Sparkles, FileText, FileJson, Download } from 'lucide-react';
 import { parseStringsFile } from '../services/converter';
-import { CodeBlock } from './CodeBlock';
 import { ParsedStrings } from '../types';
 import { DragDropZone } from './DragDropZone';
 
@@ -49,6 +48,7 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                 setError(null);
             } catch (err) { setError("Error reading source file"); }
         }
+        if (e.target) e.target.value = '';
     };
 
     const handleKeyCompUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,12 +59,14 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                 setError(null);
             } catch (err) { setError("Error reading key-comparable file"); }
         }
+        if (e.target) e.target.value = '';
     };
 
     const handleValCompUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.length) {
             await processValCompFiles(e.target.files);
         }
+        if (e.target) e.target.value = '';
     };
 
     const processValCompFiles = async (fileList: FileList) => {
@@ -188,157 +190,217 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
         }, 500);
     };
 
+    const handleDownload = () => {
+        if (!outputContent) return;
+        const blob = new Blob([outputContent], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Renamed.strings';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     return (
-        <div className="flex flex-col min-h-screen md:h-screen md:overflow-hidden space-y-6 p-4 md:p-8">
-            {/* Header */}
-            <header className="flex items-center justify-between pb-4 border-b border-gray-700/50 flex-shrink-0">
-                <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors group" title="Back to Dashboard">
-                        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                    </button>
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-pink-500/20 rounded-lg">
-                            <Type className="w-5 h-5 text-pink-400" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold text-white">Key Renamer</h1>
-                            <p className="text-xs text-gray-400">Batch rename keys across files</p>
-                        </div>
-                    </div>
+        <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans">
+            <header className="flex items-center px-6 py-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur-md sticky top-0 z-10">
+                <button
+                    onClick={onBack}
+                    className="p-2 mr-4 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-all transform hover:scale-105 active:scale-95"
+                    aria-label="Go back"
+                >
+                    <ArrowLeft size={24} />
+                </button>
+                <div>
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
+                        Key Renamer
+                    </h1>
+                    <p className="text-slate-400 text-sm">Batch rename keys across files</p>
                 </div>
-                <div className="flex items-center space-x-2">
-                    <button onClick={handleClearAll} title="Clear All" className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors">
-                        <Trash2 size={18} />
+                {/* Clear All Button */}
+                {(sourceFile || keyCompFile || valCompFiles.length > 0) && (
+                    <button onClick={handleClearAll} className="ml-auto p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors">
+                        <Trash2 size={20} />
                     </button>
-                </div>
+                )}
             </header>
 
-            <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
+            <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
                 {/* Inputs Column */}
-                <div className="flex flex-col gap-4 md:overflow-y-auto pr-2 custom-scrollbar">
+                <div className="w-full md:w-1/3 md:max-w-md p-6 border-r border-slate-700 overflow-y-auto bg-slate-900/50 flex flex-col gap-6 custom-scrollbar">
 
                     {/* Source File Input */}
-                    <DragDropZone
-                        onFilesDropped={handleSourceDropped}
-                        className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg"
-                        isDraggingClass="bg-blue-500/10 ring-2 ring-blue-500/50 border-blue-500"
-                    >
-                        <h2 className="text-sm font-semibold text-gray-300 mb-3 flex justify-between items-center">
-                            <span className="flex items-center gap-2"><FileText size={14} className="text-blue-400" /> 1. Source File</span>
-                            <span className="text-xs text-gray-500 font-normal">(e.g. albanian.strings)</span>
+                    <div>
+                        <h2 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <span className="w-5 h-5 rounded bg-blue-500/20 text-blue-400 flex items-center justify-center text-[10px] font-bold">1</span>
+                            Source File <span className="text-slate-600 font-normal lowercase">(e.g. albanian.strings)</span>
                         </h2>
-                        {sourceFile ? (
-                            <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                                <span className="text-sm font-mono text-gray-300 truncate pr-2">{sourceFile.name}</span>
-                                <button onClick={() => setSourceFile(null)} className="text-gray-500 hover:text-red-400 transition-colors"><X size={16} /></button>
-                            </div>
-                        ) : (
-                            <button onClick={() => sourceInputRef.current?.click()} className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-700 rounded-xl hover:bg-gray-800/50 hover:border-blue-500/50 transition-all text-gray-400 text-sm group">
-                                <Upload className="w-4 h-4 mr-2 group-hover:text-blue-400 transition-colors" /> Drag & Drop or Upload Source .strings
-                            </button>
-                        )}
-                        <input type="file" ref={sourceInputRef} onChange={handleSourceUpload} accept=".strings" className="hidden" />
-                    </DragDropZone>
+                        <DragDropZone
+                            onFilesDropped={handleSourceDropped}
+                            className={`rounded-xl border border-slate-700 bg-slate-800/20 transition-all ${sourceFile ? 'border-blue-500/30 bg-blue-500/5' : ''}`}
+                            isDraggingClass="border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/50"
+                        >
+                            {sourceFile ? (
+                                <div className="flex items-center justify-between p-3">
+                                    <span className="text-sm font-mono text-slate-300 truncate pr-2">{sourceFile.name}</span>
+                                    <button onClick={() => setSourceFile(null)} className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-colors"><X size={16} /></button>
+                                </div>
+                            ) : (
+                                <div
+                                    className="p-6 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:bg-slate-800/30 transition-colors"
+                                    onClick={() => sourceInputRef.current?.click()}
+                                >
+                                    <Upload size={20} className="mb-2 opacity-50" />
+                                    <p className="text-sm">Upload Source</p>
+                                </div>
+                            )}
+                            <input type="file" ref={sourceInputRef} onChange={handleSourceUpload} accept=".strings" className="hidden" />
+                        </DragDropZone>
+                    </div>
 
                     {/* Key Comparable Input */}
-                    <DragDropZone
-                        onFilesDropped={handleKeyCompDropped}
-                        className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg"
-                        isDraggingClass="bg-purple-500/10 ring-2 ring-purple-500/50 border-purple-500"
-                    >
-                        <h2 className="text-sm font-semibold text-gray-300 mb-1 flex justify-between items-center">
-                            <span className="flex items-center gap-2"><FileText size={14} className="text-purple-400" /> 2. Key-Comparable File</span>
-                            <span className="text-xs text-gray-500 font-normal">(e.g. OldLocalizable.strings)</span>
+                    <div>
+                        <h2 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <span className="w-5 h-5 rounded bg-purple-500/20 text-purple-400 flex items-center justify-center text-[10px] font-bold">2</span>
+                            Key-Comparable <span className="text-slate-600 font-normal lowercase">(e.g. OldLocalizable.strings)</span>
                         </h2>
-                        <p className="text-xs text-gray-500 mb-3 ml-6">Maps Source Keys to values.</p>
-                        {keyCompFile ? (
-                            <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                                <span className="text-sm font-mono text-gray-300 truncate pr-2">{keyCompFile.name}</span>
-                                <button onClick={() => setKeyCompFile(null)} className="text-gray-500 hover:text-red-400 transition-colors"><X size={16} /></button>
-                            </div>
-                        ) : (
-                            <button onClick={() => keyCompInputRef.current?.click()} className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-700 rounded-xl hover:bg-gray-800/50 hover:border-purple-500/50 transition-all text-gray-400 text-sm group">
-                                <Upload className="w-4 h-4 mr-2 group-hover:text-purple-400 transition-colors" /> Drag & Drop or Upload Key-Comparable
-                            </button>
-                        )}
-                        <input type="file" ref={keyCompInputRef} onChange={handleKeyCompUpload} accept=".strings" className="hidden" />
-                    </DragDropZone>
+                        <DragDropZone
+                            onFilesDropped={handleKeyCompDropped}
+                            className={`rounded-xl border border-slate-700 bg-slate-800/20 transition-all ${keyCompFile ? 'border-purple-500/30 bg-purple-500/5' : ''}`}
+                            isDraggingClass="border-purple-500 bg-purple-500/10 ring-2 ring-purple-500/50"
+                        >
+                            {keyCompFile ? (
+                                <div className="flex items-center justify-between p-3">
+                                    <span className="text-sm font-mono text-slate-300 truncate pr-2">{keyCompFile.name}</span>
+                                    <button onClick={() => setKeyCompFile(null)} className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-colors"><X size={16} /></button>
+                                </div>
+                            ) : (
+                                <div
+                                    className="p-6 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:bg-slate-800/30 transition-colors"
+                                    onClick={() => keyCompInputRef.current?.click()}
+                                >
+                                    <Upload size={20} className="mb-2 opacity-50" />
+                                    <p className="text-sm">Upload Key-Comp</p>
+                                </div>
+                            )}
+                            <input type="file" ref={keyCompInputRef} onChange={handleKeyCompUpload} accept=".strings" className="hidden" />
+                        </DragDropZone>
+                    </div>
 
                     {/* Value Comparable Inputs */}
-                    <DragDropZone
-                        onFilesDropped={handleValCompDropped}
-                        className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg flex-grow flex flex-col min-h-0"
-                        isDraggingClass="bg-green-500/10 ring-2 ring-green-500/50 border-green-500"
-                    >
-                        <h2 className="text-sm font-semibold text-gray-300 mb-1 flex justify-between items-center">
-                            <span className="flex items-center gap-2"><FileText size={14} className="text-green-400" /> 3. Value-Comparable Files</span>
-                            <span className="text-xs text-gray-500 font-normal">(NewLocalizable files)</span>
+                    <div className="flex-1 flex flex-col min-h-[150px]">
+                        <h2 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <span className="w-5 h-5 rounded bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px] font-bold">3</span>
+                            Value-Comparables <span className="text-slate-600 font-normal lowercase">(NewLocalizable files)</span>
                         </h2>
-                        <p className="text-xs text-gray-500 mb-3 ml-6">Finds new keys based on matching values.</p>
-
-                        <div className="flex-grow overflow-y-auto space-y-2 mb-3 min-h-[100px] max-h-[300px] custom-scrollbar pr-1">
-                            {valCompFiles.map(f => (
-                                <div key={f.name} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700/50">
-                                    <span className="text-sm font-mono text-gray-300 truncate pr-2">{f.name}</span>
-                                    <button onClick={() => removeValCompFile(f.name)} className="text-gray-500 hover:text-red-400 transition-colors"><X size={16} /></button>
-                                </div>
-                            ))}
-                            {valCompFiles.length === 0 && <p className="text-xs text-gray-600 text-center py-8 border-2 border-dashed border-gray-800 rounded-lg">Drag & Drop or Upload files.</p>}
-                        </div>
-
-                        <button onClick={() => valCompInputRef.current?.click()} className="w-full flex items-center justify-center p-3 border border-gray-700 bg-gray-800/50 rounded-lg hover:bg-gray-700 transition-all text-gray-300 text-sm">
-                            <Upload className="w-4 h-4 mr-2" /> Add Files
-                        </button>
-                        <input type="file" ref={valCompInputRef} onChange={handleValCompUpload} accept=".strings" multiple className="hidden" />
-                    </DragDropZone>
+                        <DragDropZone
+                            onFilesDropped={handleValCompDropped}
+                            className="flex-1 rounded-xl border border-slate-700 bg-slate-800/20 flex flex-col overflow-hidden"
+                            isDraggingClass="border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/50"
+                        >
+                            <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+                                {valCompFiles.length === 0 ? (
+                                    <div
+                                        className="h-full flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:bg-slate-800/30 transition-colors min-h-[100px]"
+                                        onClick={() => valCompInputRef.current?.click()}
+                                    >
+                                        <Upload size={20} className="mb-2 opacity-50" />
+                                        <p className="text-sm">Upload Value-Comps</p>
+                                    </div>
+                                ) : (
+                                    valCompFiles.map(f => (
+                                        <div key={f.name} className="flex items-center justify-between p-2 bg-slate-800/50 rounded-lg border border-slate-700/50">
+                                            <span className="text-sm font-mono text-slate-300 truncate pr-2">{f.name}</span>
+                                            <button onClick={() => removeValCompFile(f.name)} className="p-1 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-colors"><X size={14} /></button>
+                                        </div>
+                                    ))
+                                )}
+                            </div>
+                            <div className="p-2 border-t border-slate-700 bg-slate-800/30">
+                                <button
+                                    onClick={() => valCompInputRef.current?.click()}
+                                    className="w-full py-2 text-xs font-medium text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700"
+                                >
+                                    Add Files...
+                                </button>
+                            </div>
+                            <input type="file" ref={valCompInputRef} onChange={handleValCompUpload} accept=".strings" multiple className="hidden" />
+                        </DragDropZone>
+                    </div>
 
                     <button
                         onClick={processRenaming}
                         disabled={isLoading || !sourceFile || !keyCompFile || valCompFiles.length === 0}
-                        className="w-full py-3 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-500 text-white font-semibold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center space-x-2 active:scale-95"
+                        className="w-full py-3.5 text-sm font-bold text-white bg-pink-600 rounded-xl shadow-lg shadow-pink-500/20 hover:bg-pink-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
-                        {isLoading ? (
-                            <span>Processing...</span>
-                        ) : (
+                        {isLoading ? 'Processing...' : (
                             <>
-                                <Sparkles className="w-5 h-5" />
-                                <span>Process Renaming</span>
+                                <Sparkles size={16} /> Process Renaming
                             </>
                         )}
                     </button>
-                    {error && <p className="text-sm text-red-400 mt-2 text-center bg-red-500/10 p-3 rounded-lg border border-red-500/20">{error}</p>}
-
+                    {error && (
+                        <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+                            <p className="text-xs text-rose-300">{error}</p>
+                        </div>
+                    )}
                 </div>
 
                 {/* Output Column */}
-                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg md:overflow-hidden">
-                    <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Output & Logs</h2>
+                <div className="flex-1 overflow-y-auto bg-slate-950 p-6 flex flex-col">
+                    <div className="flex items-center justify-between mb-3 flex-shrink-0">
+                        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Output Result</h2>
+                        {outputContent && (
+                            <div className="flex space-x-2">
+                                <button
+                                    onClick={handleDownload}
+                                    className="flex items-center space-x-2 px-3 py-1.5 text-xs font-bold text-slate-200 bg-pink-600 rounded-lg hover:bg-pink-500 transition-all active:scale-95 shadow-lg shadow-pink-500/20"
+                                >
+                                    <Download size={14} />
+                                    <span>Download</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
-                    {outputContent ? (
-                        <div className="flex flex-col h-[500px] md:h-full md:overflow-hidden gap-4">
-                            <div className="flex-1 min-h-0 rounded-lg border border-gray-700/50 bg-gray-900/50 overflow-hidden">
-                                <CodeBlock
-                                    content={outputContent}
-                                    language="strings"
-                                    fileName={`Renamed_${sourceFile?.name || 'result.strings'}`}
+
+                    <div className="flex-1 flex flex-col gap-6">
+                        {/* Result Area */}
+                        <div className="flex-1 rounded-xl border border-slate-800 bg-slate-900/50 relative shadow-inner overflow-hidden min-h-[200px]">
+                            {outputContent ? (
+                                <textarea
+                                    readOnly
+                                    value={outputContent}
+                                    className="w-full h-full p-4 bg-transparent text-slate-300 font-mono text-xs resize-none focus:outline-none custom-scrollbar"
                                 />
+                            ) : (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600 opacity-50">
+                                    <FileText size={48} className="mb-4" />
+                                    <p className="text-lg font-medium">Ready to process</p>
+                                    <p className="text-sm">Output will appear here</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Logs Area */}
+                        <div className="h-1/3 min-h-[150px] flex flex-col bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
+                            <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+                                <span>Change Log</span>
+                                <span className="text-slate-600">{renameLog.length} entries</span>
                             </div>
-                            <div className="h-1/3 min-h-[150px] flex flex-col bg-gray-900/30 rounded-lg border border-gray-700/50 overflow-hidden">
-                                <div className="px-3 py-2 bg-gray-800/50 border-b border-gray-700/50 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                                    Change Log
-                                </div>
-                                <div className="flex-1 overflow-y-auto p-3 font-mono text-xs text-gray-400 space-y-1 custom-scrollbar">
-                                    {renameLog.map((log, i) => (
-                                        <div key={i} className="border-b border-gray-800/50 pb-1 last:border-0">{log}</div>
-                                    ))}
-                                </div>
+                            <div className="flex-1 overflow-y-auto p-4 font-mono text-xs text-slate-400 space-y-1 custom-scrollbar">
+                                {renameLog.length > 0 ? (
+                                    renameLog.map((log, i) => (
+                                        <div key={i} className="border-b border-slate-800/50 pb-1 last:border-0">{log}</div>
+                                    ))
+                                ) : (
+                                    <div className="text-slate-600 italic">No changes logged yet.</div>
+                                )}
                             </div>
                         </div>
-                    ) : (
-                        <div className="flex items-center justify-center h-full text-gray-500 bg-gray-900/30 rounded-lg border border-gray-800 border-dashed">
-                            <p>Upload files and process to see results.</p>
-                        </div>
-                    )}
+                    </div>
                 </div>
             </div>
         </div>

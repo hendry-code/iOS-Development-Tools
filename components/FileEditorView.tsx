@@ -233,7 +233,7 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
       const isCurrent = i === currentMatchIndex;
 
       parts.push(
-        <mark key={i} className={`p-0 m-0 rounded-sm ${isCurrent ? 'bg-amber-500/60' : 'bg-red-500/40'}`}>
+        <mark key={i} className={`p-0 m-0 rounded-sm ${isCurrent ? 'bg-amber-500/60 text-white' : 'bg-rose-500/40 text-white'}`}>
           {matchText}
         </mark>
       );
@@ -251,50 +251,50 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
 
 
   const renderEditor = () => (
-    <div className="flex flex-col h-full bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-xl">
+    <div className="flex flex-col h-full bg-slate-950 p-6">
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div className="flex items-center space-x-4">
-          <span className="text-md font-semibold text-white font-mono">{file?.name}</span>
-          <button onClick={() => setShowFind(!showFind)} className={`p-2 rounded-lg transition-colors ${showFind ? 'bg-blue-500/20 text-blue-400' : 'text-gray-400 hover:bg-gray-700/50'}`} title="Find & Replace">
+          <span className="text-md font-semibold text-slate-200 font-mono">{file?.name}</span>
+          <button onClick={() => setShowFind(!showFind)} className={`p-2 rounded-lg transition-colors ${showFind ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:bg-slate-800'}`} title="Find & Replace">
             <Search className="w-5 h-5" />
           </button>
         </div>
         <div className="flex items-center space-x-2">
-          <button onClick={() => fileInputRef.current?.click()} className="flex items-center space-x-2 px-3 py-1.5 text-xs font-medium text-gray-300 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm hover:bg-gray-600/50 transition-all" title="Upload New File">
+          <button onClick={() => fileInputRef.current?.click()} className="flex items-center space-x-2 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 border border-slate-700 rounded-md shadow-sm hover:bg-slate-700 transition-all" title="Upload New File">
             <Upload className="w-4 h-4" />
           </button>
           <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".strings,.stringsdict,.xml,.localizable,.properties,.xcstrings" className="hidden" />
-          <button onClick={handleDownload} className="flex items-center space-x-2 px-3 py-1.5 text-xs font-medium text-gray-300 bg-gray-700/50 border border-gray-600 rounded-md shadow-sm hover:bg-gray-600/50 transition-all" title="Download File">
+          <button onClick={handleDownload} className="flex items-center space-x-2 px-3 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 border border-slate-700 rounded-md shadow-sm hover:bg-slate-700 transition-all" title="Download File">
             <Download className="w-4 h-4" />
           </button>
-          <button onClick={handleCloseFile} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors" title="Close File">
+          <button onClick={handleCloseFile} className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors" title="Close File">
             <X className="w-5 h-5" />
           </button>
         </div>
       </div>
 
       {showFind && (
-        <div className="bg-gray-800/80 p-2 rounded-md mb-2 flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm transition-all duration-300 border border-gray-700/50">
+        <div className="bg-slate-800/80 p-2 rounded-lg mb-2 flex-shrink-0 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm transition-all duration-300 border border-slate-700/50">
           <div className="flex items-center space-x-2">
-            <input type="text" placeholder="Find" value={findTerm} onChange={(e) => setFindTerm(e.target.value)} className="w-full text-sm p-1.5 bg-gray-900 border border-gray-700 rounded-md focus:ring-1 focus:ring-blue-500 focus:outline-none text-white" />
-            <span className="text-gray-400 text-xs px-1 whitespace-nowrap w-24 text-center">
+            <input type="text" placeholder="Find" value={findTerm} onChange={(e) => setFindTerm(e.target.value)} className="w-full text-sm p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-1 focus:ring-indigo-500 focus:outline-none text-white" />
+            <span className="text-slate-400 text-xs px-1 whitespace-nowrap w-24 text-center">
               {findTerm && allMatches.length > 0 ? `${currentMatchIndex === -1 ? '-' : currentMatchIndex + 1} / ${allMatches.length}` : findTerm ? '0 results' : ''}
             </span>
-            <button onClick={handleFindPrev} className="p-1.5 bg-gray-700 hover:bg-gray-600 rounded-md text-gray-300" title="Previous match"><ChevronUp size={14} /></button>
-            <button onClick={handleFindNext} className="p-1.5 bg-gray-700 hover:bg-gray-600 rounded-md text-gray-300" title="Next match"><ChevronDown size={14} /></button>
+            <button onClick={handleFindPrev} className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded-md text-slate-300" title="Previous match"><ChevronUp size={14} /></button>
+            <button onClick={handleFindNext} className="p-1.5 bg-slate-700 hover:bg-slate-600 rounded-md text-slate-300" title="Next match"><ChevronDown size={14} /></button>
           </div>
           <div className="flex items-center space-x-2">
-            <input type="text" placeholder="Replace" value={replaceTerm} onChange={(e) => setReplaceTerm(e.target.value)} className="w-full text-sm p-1.5 bg-gray-900 border border-gray-700 rounded-md focus:ring-1 focus:ring-blue-500 focus:outline-none text-white" />
-            <button onClick={handleReplace} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-md whitespace-nowrap text-gray-300 text-xs">Replace</button>
-            <button onClick={handleReplaceAll} className="px-3 py-1.5 bg-gray-700 hover:bg-gray-600 rounded-md whitespace-nowrap text-gray-300 text-xs">All</button>
+            <input type="text" placeholder="Replace" value={replaceTerm} onChange={(e) => setReplaceTerm(e.target.value)} className="w-full text-sm p-2 bg-slate-900 border border-slate-700 rounded-md focus:ring-1 focus:ring-indigo-500 focus:outline-none text-white" />
+            <button onClick={handleReplace} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-md whitespace-nowrap text-slate-300 text-xs font-medium">Replace</button>
+            <button onClick={handleReplaceAll} className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 rounded-md whitespace-nowrap text-slate-300 text-xs font-medium">All</button>
           </div>
         </div>
       )}
 
-      <div className="flex-grow relative bg-gray-900/50 rounded-md shadow-inner border border-gray-700 font-mono text-sm leading-6">
+      <div className="flex-1 relative bg-slate-900/50 rounded-lg shadow-inner border border-slate-800 font-mono text-sm leading-6">
         <div
           ref={backdropRef}
-          className="absolute inset-0 w-full h-full p-4 overflow-auto pointer-events-none whitespace-pre-wrap break-words text-gray-300"
+          className="absolute inset-0 w-full h-full p-4 overflow-auto pointer-events-none whitespace-pre-wrap break-words text-slate-300 custom-scrollbar"
         >
           {highlightedContent}
         </div>
@@ -303,7 +303,7 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
           value={editedContent}
           onChange={(e) => setEditedContent(e.target.value)}
           onScroll={handleScroll}
-          className="absolute inset-0 w-full h-full p-4 bg-transparent text-transparent caret-white resize-none focus:outline-none"
+          className="absolute inset-0 w-full h-full p-4 bg-transparent text-transparent caret-white resize-none focus:outline-none custom-scrollbar"
           style={{ fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit' }}
           spellCheck="false"
           aria-label="File content editor"
@@ -313,44 +313,49 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
   );
 
   const renderUploadPrompt = () => (
-    <DragDropZone
-      onFilesDropped={handleFilesDropped}
-      className="flex flex-col items-center justify-center h-full"
-      isDraggingClass="border-blue-500 bg-blue-500/10"
-    >
-      <label className="flex flex-col items-center justify-center w-full max-w-lg h-64 border-2 border-gray-700 border-dashed rounded-xl cursor-pointer bg-gray-800/30 hover:border-blue-500/50 hover:bg-gray-700/30 transition-all group">
-        <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
-          <div className="p-4 bg-gray-800 rounded-full mb-4 group-hover:scale-110 transition-transform">
-            <Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-400 transition-colors" />
+    <div className="flex-1 p-6 flex flex-col items-center justify-center">
+      <DragDropZone
+        onFilesDropped={handleFilesDropped}
+        className="w-full max-w-2xl h-96 flex flex-col items-center justify-center border-2 border-slate-700 border-dashed rounded-2xl cursor-pointer bg-slate-800/20 hover:border-orange-500/50 hover:bg-slate-800/40 transition-all group"
+        isDraggingClass="border-orange-500 bg-orange-500/10 ring-2 ring-orange-500/50"
+      >
+        <div className="flex flex-col items-center justify-center p-8 text-center" onClick={() => fileInputRef.current?.click()}>
+          <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform shadow-lg">
+            <Upload className="w-10 h-10 text-slate-400 group-hover:text-orange-400 transition-colors" />
           </div>
-          <p className="mb-2 text-lg font-semibold text-gray-300">Drag & Drop or Click to upload</p>
-          <p className="text-xs text-gray-500">Supports .strings, .xml, .properties, etc.</p>
+          <h3 className="mb-2 text-2xl font-bold text-slate-200">Upload File to Edit</h3>
+          <p className="text-slate-400 mb-6">Drag & Drop or Click to browse</p>
+          <div className="flex gap-2">
+            <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-500 font-mono border border-slate-700">.strings</span>
+            <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-500 font-mono border border-slate-700">.xml</span>
+            <span className="px-2 py-1 bg-slate-800 rounded text-xs text-slate-500 font-mono border border-slate-700">.json</span>
+          </div>
         </div>
-        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".strings,.stringsdict,.xml,.localizable,.properties,.xcstrings" className="hidden" />
-      </label>
-      {error && <p className="text-sm text-red-400 mt-4 bg-red-500/10 px-4 py-2 rounded-md border border-red-500/20">{error}</p>}
-    </DragDropZone>
+        <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".strings,.stringsdict,.xml,.localizable,.properties,.xcstrings,.json" className="hidden" />
+      </DragDropZone>
+      {error && <p className="text-sm text-rose-400 mt-6 bg-rose-500/10 px-6 py-3 rounded-xl border border-rose-500/20 animate-in fade-in slide-in-from-bottom-2">{error}</p>}
+    </div>
   );
 
   return (
-    <div className="flex flex-col min-h-screen md:h-screen md:overflow-hidden space-y-6 p-4 md:p-8">
-      <header className="flex items-center justify-between pb-4 border-b border-gray-700/50 flex-shrink-0">
-        <div className="flex items-center gap-4">
-          <button onClick={onBack} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors group" title="Back to Dashboard">
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-          </button>
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-500/20 rounded-lg">
-              <FileEdit className="w-5 h-5 text-orange-400" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-white">File Editor</h1>
-              <p className="text-xs text-gray-400">Edit localization files directly</p>
-            </div>
-          </div>
+    <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans">
+      <header className="flex items-center px-6 py-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur-md sticky top-0 z-10">
+        <button
+          onClick={onBack}
+          className="p-2 mr-4 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-all transform hover:scale-105 active:scale-95"
+          aria-label="Go back"
+        >
+          <ArrowLeft size={24} />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent">
+            File Editor
+          </h1>
+          <p className="text-slate-400 text-sm">Edit localization files directly</p>
         </div>
       </header>
-      <div className="flex-grow min-h-[500px] md:min-h-0">
+
+      <div className="flex-1 overflow-hidden flex flex-col">
         {file ? renderEditor() : renderUploadPrompt()}
       </div>
     </div>

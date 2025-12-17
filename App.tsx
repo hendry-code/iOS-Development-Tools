@@ -9,9 +9,12 @@ import { PropertiesConverterView } from './components/ConverterView';
 import { FileEditorView } from './components/FileEditorView';
 import { KeyRenamerView } from './components/KeyRenamerView';
 import { MergeStringsView } from './components/MergeStringsView';
-import { WordCountView } from './components/WordCountView';
+
 import { StringsAnalyserView } from './components/StringsAnalyserView';
 
+
+import { ThemeProvider } from './src/context/ThemeContext';
+import { ThemeToggle } from './components/ThemeToggle';
 
 function App() {
   const [view, setView] = useState<ViewMode>('dashboard');
@@ -30,8 +33,7 @@ function App() {
         return <KeyRenamerView onBack={() => setView('dashboard')} />;
       case 'merge':
         return <MergeStringsView onBack={() => setView('dashboard')} />;
-      case 'wordcount':
-        return <WordCountView onBack={() => setView('dashboard')} />;
+
       case 'analyser':
         return <StringsAnalyserView onBack={() => setView('dashboard')} />;
       case 'dashboard':
@@ -41,9 +43,11 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-transparent text-slate-100 font-sans selection:bg-red-500/30 overflow-x-hidden">
-      {renderView()}
-    </div>
+    <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+      <div className="min-h-screen w-full bg-slate-50 dark:bg-transparent text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-500/30 dark:selection:bg-red-500/30 overflow-x-hidden transition-colors duration-300">
+        {renderView()}
+      </div>
+    </ThemeProvider>
   );
 }
 

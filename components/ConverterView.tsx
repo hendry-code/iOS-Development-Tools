@@ -122,49 +122,59 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
     };
 
     return (
-        <div className="flex flex-col min-h-screen md:h-screen md:overflow-hidden space-y-6 p-4 md:p-8">
-            <header className="flex items-center justify-between pb-4 border-b border-gray-700/50 flex-shrink-0">
-                <div className="flex items-center gap-4">
-                    <button onClick={onBack} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors group" title="Back to Dashboard">
-                        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-                    </button>
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 bg-green-500/20 rounded-lg">
-                            <FileJson className="w-5 h-5 text-green-400" />
-                        </div>
-                        <div>
-                            <h1 className="text-lg font-bold text-white">Convert to .properties</h1>
-                            <p className="text-xs text-gray-400">Convert iOS/Android files to Java properties</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <button onClick={handleClearProject} title="Clear All" className="p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors">
-                        <Trash2 size={18} />
-                    </button>
+        <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans">
+            <header className="flex items-center px-6 py-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur-md sticky top-0 z-10">
+                <button
+                    onClick={onBack}
+                    className="p-2 mr-4 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-all transform hover:scale-105 active:scale-95"
+                    aria-label="Go back"
+                >
+                    <ArrowLeft size={24} />
+                </button>
+                <div>
+                    <h1 className="text-2xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+                        Properties Converter
+                    </h1>
+                    <p className="text-slate-400 text-sm">Convert iOS/Android files to Java properties</p>
                 </div>
             </header>
 
-            <div className="flex-grow grid grid-cols-1 md:grid-cols-2 gap-6 min-h-0">
+            <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
                 {/* Input Panel */}
-                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl min-h-[400px] md:h-full md:overflow-hidden border border-gray-700/50 shadow-xl">
-                    <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Input Files</h2>
+                <div className="w-full md:w-1/3 md:max-w-md p-6 border-r border-slate-700 overflow-y-auto bg-slate-900/50 flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                        <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">
+                            Input Files
+                        </h2>
+                        {inputFiles.length > 0 && (
+                            <button onClick={handleClearProject} className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1">
+                                <Trash2 size={12} /> Clear All
+                            </button>
+                        )}
+                    </div>
+
                     <DragDropZone
                         onFilesDropped={handleFilesDropped}
-                        className="flex-grow flex flex-col min-h-[150px] overflow-hidden"
-                        isDraggingClass="border-green-500 bg-green-500/10 ring-2 ring-green-500/50"
+                        className="flex-grow flex flex-col min-h-[150px] overflow-hidden rounded-xl border border-slate-700 bg-slate-800/20"
+                        isDraggingClass="border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/50"
                     >
-                        <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-800 p-2 space-y-2 h-full custom-scrollbar transition-colors">
+                        <div className="flex-grow overflow-y-auto p-2 space-y-2 h-full custom-scrollbar">
                             {inputFiles.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-2">
-                                    <Upload size={24} className="opacity-50" />
-                                    <p className="text-sm">Drag & Drop or Upload files</p>
+                                <div
+                                    className="flex flex-col items-center justify-center h-full text-slate-500 cursor-pointer hover:bg-slate-800/30 transition-colors"
+                                    onClick={() => fileInputRef.current?.click()}
+                                >
+                                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center mb-3">
+                                        <Upload size={20} className="text-slate-400" />
+                                    </div>
+                                    <p className="text-sm font-medium text-slate-400">Drag & Drop files</p>
+                                    <p className="text-xs text-slate-600 mt-1">.strings, .stringsdict, .xml</p>
                                 </div>
                             ) : (
                                 inputFiles.map(file => (
-                                    <div key={file.name} className="flex items-center justify-between p-2 bg-gray-800/50 hover:bg-gray-800 rounded-md group transition-colors border border-transparent hover:border-gray-700">
-                                        <span className="text-sm font-mono text-gray-300 truncate pr-2" title={file.name}>{file.name}</span>
-                                        <button onClick={() => handleRemoveFile(file.name)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors opacity-0 group-hover:opacity-100">
+                                    <div key={file.name} className="flex items-center justify-between p-3 bg-slate-800/60 hover:bg-slate-800 rounded-lg group transition-colors border border-slate-700 hover:border-slate-600">
+                                        <span className="text-sm font-mono text-slate-300 truncate pr-2" title={file.name}>{file.name}</span>
+                                        <button onClick={() => handleRemoveFile(file.name)} className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 rounded-md transition-colors opacity-0 group-hover:opacity-100">
                                             <X size={14} />
                                         </button>
                                     </div>
@@ -172,23 +182,37 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
                             )}
                         </div>
                     </DragDropZone>
-                    {error && <p className="text-xs text-red-400 mt-2 flex-shrink-0 bg-red-500/10 p-2 rounded border border-red-500/20">{error}</p>}
-                    <div className="flex items-center justify-between mt-4 flex-shrink-0 gap-3">
-                        <button onClick={() => fileInputRef.current?.click()} className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-700 rounded-md hover:bg-gray-700 hover:text-white transition-all active:scale-95">
+
+                    {error && (
+                        <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
+                            <p className="text-xs text-rose-300">{error}</p>
+                        </div>
+                    )}
+
+                    <div className="mt-4 flex flex-col gap-3">
+                        <button
+                            onClick={() => fileInputRef.current?.click()}
+                            className="flex items-center justify-center space-x-2 px-4 py-3 text-sm font-medium text-slate-300 bg-slate-800 border border-slate-700 rounded-xl hover:bg-slate-700 hover:text-white transition-all active:scale-95"
+                        >
                             <Upload size={16} />
                             <span>Add Files</span>
                         </button>
                         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".strings,.stringsdict,.xml" className="hidden" multiple />
-                        <button onClick={() => handleConvert(inputFiles)} disabled={isLoading || inputFiles.length === 0} className="flex-1 px-6 py-2 text-sm font-semibold text-white bg-blue-600 rounded-md hover:bg-blue-500 disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-blue-500/20">
-                            {isLoading ? 'Processing...' : 'Convert'}
+
+                        <button
+                            onClick={() => handleConvert(inputFiles)}
+                            disabled={isLoading || inputFiles.length === 0}
+                            className="w-full px-6 py-3.5 text-sm font-bold text-white bg-emerald-600 rounded-xl hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed transition-all active:scale-95 shadow-lg shadow-emerald-500/20"
+                        >
+                            {isLoading ? 'Processing...' : 'Convert to Properties'}
                         </button>
                     </div>
                 </div>
 
                 {/* Output Panel */}
-                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl min-h-[400px] md:h-full md:overflow-hidden border border-gray-700/50 shadow-xl">
-                    <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Output (.properties)</h2>
-                    <div className="flex-grow overflow-hidden rounded-lg border border-gray-700/50 bg-gray-900/50">
+                <div className="flex-1 overflow-y-auto bg-slate-950 p-6 flex flex-col">
+                    <h2 className="text-sm font-semibold text-slate-400 mb-3 flex-shrink-0 uppercase tracking-wider">Output Result</h2>
+                    <div className="flex-1 overflow-hidden rounded-xl border border-slate-800 bg-slate-900/50 shadow-inner relative">
                         {outputContent ? (
                             <CodeBlock
                                 content={outputContent}
@@ -196,8 +220,10 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
                                 fileName="strings.properties"
                             />
                         ) : (
-                            <div className="flex items-center justify-center h-full text-gray-500 bg-gray-900/30 rounded-lg border border-gray-800 border-dashed">
-                                <p>Output will appear here</p>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-600 opacity-50">
+                                <FileJson size={48} className="mb-4" />
+                                <p className="text-lg font-medium">Ready to convert</p>
+                                <p className="text-sm">Upload files to generate properties</p>
                             </div>
                         )}
                     </div>

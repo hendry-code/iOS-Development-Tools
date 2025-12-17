@@ -1,9 +1,10 @@
 
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, Languages, AlertCircle, CheckCircle, AlertTriangle, Copy, FileText, Search, Upload, X, Trash2, ScanSearch } from 'lucide-react';
+import { ArrowLeft, Languages, AlertCircle, CheckCircle, AlertTriangle, Copy, FileText, Search, Upload, X, Trash2, ScanSearch, Calculator, Download } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 import { LanguageFile } from '../types';
 import { analyzeStrings, StringsAnalysisResult } from '../services/stringsAnalyser';
+import { calculateTotalWords, WordCountResult, FileWordCount } from '../services/wordCounter';
 
 interface StringsAnalyserViewProps {
     onBack: () => void;
@@ -34,7 +35,8 @@ const readFile = (file: File): Promise<LanguageFile> => {
 export const StringsAnalyserView: React.FC<StringsAnalyserViewProps> = ({ onBack }) => {
     const [files, setFiles] = useState<LanguageFile[]>([]);
     const [result, setResult] = useState<StringsAnalysisResult | null>(null);
-    const [activeTab, setActiveTab] = useState<'languages' | 'duplicates'>('languages');
+    const [wordCountResult, setWordCountResult] = useState<WordCountResult | null>(null);
+    const [activeTab, setActiveTab] = useState<'languages' | 'duplicates' | 'wordcount'>('languages');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleFilesChange = (newFiles: LanguageFile[]) => {
@@ -42,8 +44,11 @@ export const StringsAnalyserView: React.FC<StringsAnalyserViewProps> = ({ onBack
         if (newFiles.length > 0) {
             const analysis = analyzeStrings(newFiles);
             setResult(analysis);
+            const wordEffect = calculateTotalWords(newFiles);
+            setWordCountResult(wordEffect);
         } else {
             setResult(null);
+            setWordCountResult(null);
         }
     };
 
@@ -79,6 +84,33 @@ export const StringsAnalyserView: React.FC<StringsAnalyserViewProps> = ({ onBack
     const clearAll = () => {
         handleFilesChange([]);
     }
+
+    const handleDownloadReport = () => {
+        if (!result) return;
+        const report = {
+            summary: {
+                totalKeys: result.totalKeys,
+                totalLanguages: result.totalLanguages,
+                totalDuplicates: result.duplicates.length,
+                totalLooseDuplicates: result.looseDuplicates.length,
+                totalWords: wordCountResult?.totalWords || 0
+            },
+            languages: result.languages,
+            duplicates: result.duplicates,
+            looseDuplicates: result.looseDuplicates,
+            wordCounts: wordCountResult?.fileCounts
+        };
+
+        const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'strings-analysis-report.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
 
     return (
         <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans">
@@ -176,6 +208,15 @@ export const StringsAnalyserView: React.FC<StringsAnalyserViewProps> = ({ onBack
                         </div>
                     ) : (
                         <div className="max-w-5xl mx-auto animate-in fade-in duration-500">
+                            <div className="flex justify-end mb-4">
+                                <button
+                                    onClick={handleDownloadReport}
+                                    className="flex items-center space-x-2 px-4 py-2 text-sm font-bold text-slate-200 bg-indigo-600 rounded-lg hover:bg-indigo-500 transition-all active:scale-95 shadow-lg shadow-indigo-500/20"
+                                >
+                                    <Download size={16} />
+                                    <span>Export Report</span>
+                                </button>
+                            </div>
                             {/* Summary Cards */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                                 <div className="bg-slate-800/40 border border-slate-700 p-6 rounded-2xl shadow-lg">
@@ -208,6 +249,17 @@ export const StringsAnalyserView: React.FC<StringsAnalyserViewProps> = ({ onBack
                                         + {result.looseDuplicates.length} potential matches
                                     </p>
                                 </div>
+                                {wordCountResult && (
+                                    <div className="bg-slate-800/40 border border-slate-700 p-6 rounded-2xl shadow-lg">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <h3 className="text-slate-400 font-medium">Total Words</h3>
+                                            <div className="p-2 bg-teal-500/20 rounded-lg text-teal-400">
+                                                <Calculator size={20} />
+                                            </div>
+                                        </div>
+                                        <p className="text-4xl font-bold text-white tracking-tight">{wordCountResult.totalWords.toLocaleString()}</p>
+                                    </div>
+                                )}
                             </div>
 
                             {/* Tabs */}
@@ -229,6 +281,15 @@ export const StringsAnalyserView: React.FC<StringsAnalyserViewProps> = ({ onBack
                                         }`}
                                 >
                                     Duplicate Detection
+                                </button>
+                                <button
+                                    onClick={() => setActiveTab('wordcount')}
+                                    className={`px-6 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${activeTab === 'wordcount'
+                                        ? 'bg-indigo-600 text-white shadow-md'
+                                        : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                        }`}
+                                >
+                                    Word Count
                                 </button>
                             </div>
 
@@ -358,6 +419,38 @@ export const StringsAnalyserView: React.FC<StringsAnalyserViewProps> = ({ onBack
                                             )}
                                         </div>
 
+                                    </div>
+                                )}
+
+                                {activeTab === 'wordcount' && wordCountResult && (
+                                    <div className="p-6">
+                                        <div className="flex flex-col items-center justify-center py-8 border-b border-slate-700/50 mb-6">
+                                            <span className="text-slate-400 text-sm mb-2">Total Words Across All Files</span>
+                                            <span className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-emerald-400 drop-shadow-lg">
+                                                {wordCountResult.totalWords.toLocaleString()}
+                                            </span>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            {Object.entries(wordCountResult.fileCounts).map(([name, count]: [string, FileWordCount]) => (
+                                                <div key={name} className="flex flex-col p-4 bg-slate-800/30 rounded-lg border border-slate-700/30">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-sm text-slate-300 font-medium truncate max-w-[70%]">{name}</span>
+                                                        <span className="text-sm font-bold text-teal-400">{count.total.toLocaleString()} words</span>
+                                                    </div>
+                                                    {count.byLanguage && (
+                                                        <div className="mt-3 pl-4 border-l-2 border-slate-700/50 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                                            {Object.entries(count.byLanguage).map(([lang, langCount]) => (
+                                                                <div key={lang} className="flex items-center justify-between text-xs bg-slate-900/30 p-2 rounded">
+                                                                    <span className="text-slate-400 font-medium">{lang}</span>
+                                                                    <span className="text-slate-200">{langCount.toLocaleString()}</span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
                             </div>

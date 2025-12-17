@@ -60,13 +60,7 @@ export function Dashboard({ setView }: DashboardProps) {
             icon: Merge,
             color: 'bg-indigo-500',
         },
-        {
-            id: 'wordcount',
-            title: 'Words Count',
-            description: 'Count words in .xcstrings, .strings, .xml, and .stringsdict files',
-            icon: Calculator,
-            color: 'bg-teal-500',
-        },
+
         {
             id: 'analyser',
             title: 'Strings Analyser',
@@ -77,9 +71,9 @@ export function Dashboard({ setView }: DashboardProps) {
     ];
 
     return (
-        <div className="w-full min-h-screen p-4 md:p-8 flex flex-col items-center justify-center animate-window-open">
+        <div className="w-full min-h-screen p-4 md:p-8 flex flex-col items-center justify-center animate-window-open bg-slate-900 text-slate-100 font-sans">
             <header className="text-center mb-16">
-                <h1 className="text-5xl sm:text-7xl font-extrabold text-transparent bg-clip-text bg-gradient-to-b from-white to-white/60 tracking-tight mb-6 drop-shadow-2xl">
+                <h1 className="text-5xl sm:text-7xl font-extrabold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight mb-6 drop-shadow-2xl">
                     iOS Development Tools
                 </h1>
                 <p className="text-xl text-slate-400 max-w-2xl mx-auto font-light leading-relaxed">
@@ -94,21 +88,21 @@ export function Dashboard({ setView }: DashboardProps) {
                         <button
                             key={tool.id}
                             onClick={() => setView(tool.id as ViewMode)}
-                            className="group relative p-4 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:bg-gray-800 transition-all duration-300 text-left hover:scale-[1.02] hover:shadow-lg hover:shadow-blue-500/10"
+                            className="group relative p-4 rounded-2xl bg-slate-800/40 border border-slate-700 hover:bg-slate-800/60 transition-all duration-300 text-left hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/10 backdrop-blur-sm"
                         >
-                            <div className={`w-12 h-12 rounded-lg ${tool.color} flex items-center justify-center mb-4 shadow-lg group-hover:shadow-xl transition-all`}>
+                            <div className={`w-12 h-12 rounded-xl ${tool.color} bg-opacity-20 flex items-center justify-center mb-4 shadow-lg group-hover:shadow-xl transition-all ring-1 ring-white/10`}>
                                 <Icon className="text-white" size={24} />
                             </div>
 
-                            <h3 className="text-lg font-semibold text-white mb-1 group-hover:text-blue-400 transition-colors">
+                            <h3 className="text-lg font-semibold text-slate-100 mb-1 group-hover:text-indigo-400 transition-colors">
                                 {tool.title}
                             </h3>
 
-                            <p className="text-sm text-gray-400 mb-4 line-clamp-2">
+                            <p className="text-sm text-slate-400 mb-4 line-clamp-2">
                                 {tool.description}
                             </p>
 
-                            <div className="flex items-center text-xs font-medium text-gray-500 group-hover:text-blue-400 transition-colors">
+                            <div className="flex items-center text-xs font-medium text-slate-500 group-hover:text-indigo-400 transition-colors">
                                 Open Tool <ArrowRight size={12} className="ml-1 group-hover:translate-x-1 transition-transform" />
                             </div>
                         </button>
