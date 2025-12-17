@@ -175,6 +175,46 @@ export function generateIosStringCatalog(data: ParsedMultiLanguageStrings, sourc
     return JSON.stringify(catalog, null, 2);
 }
 
+/**
+ * Parses a JSON key-value file into a ParsedStrings object.
+ * @param content The JSON string content.
+ * @returns A record of string keys to their corresponding values.
+ */
+export function parseJson(content: string): ParsedStrings {
+    try {
+        const json = JSON.parse(content);
+        const strings: ParsedStrings = {};
+
+        const flatten = (obj: any, prefix = '') => {
+            for (const key in obj) {
+                if (typeof obj[key] === 'object' && obj[key] !== null && !isPlural(obj[key] as any)) {
+                    flatten(obj[key], prefix + key + '.');
+                } else {
+                    strings[prefix + key] = obj[key] as StringValue;
+                }
+            }
+        }
+
+        // Simple flat check first, if it's all strings, great. If nested, we flatten.
+        // If it looks like plural structure, handle it?
+        // For simplicity v1: We assume flat JSON "key": "value" or "section": { "key": "value" } -> "section.key": "value"
+        flatten(json);
+
+        return strings;
+    } catch (e) {
+        throw new Error("Invalid JSON format.");
+    }
+}
+
+/**
+ * Generates a JSON key-value string from parsed strings.
+ * @param data The parsed key-value string data.
+ * @returns A JSON string.
+ */
+export function generateJson(data: ParsedStrings): string {
+    return JSON.stringify(data, null, 2);
+}
+
 function escapeXml(str: string): string {
     return str.replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '\'': '&apos;', '"': '&quot;' }[c]!));
 }
@@ -266,7 +306,7 @@ export function parseStringCatalog(content: string): { parsedData: ParsedMultiLa
     return { parsedData, languages: Array.from(languageSet) };
 }
 
-function generateSingleStringsFileContent(data: ParsedStrings): string {
+export function generateSingleStringsFileContent(data: ParsedStrings): string {
     return Object.entries(data).map(([key, value]) => `"${key}" = "${escapeStringsValue(value as string)}";`).join('\n');
 }
 

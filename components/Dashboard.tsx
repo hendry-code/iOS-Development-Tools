@@ -1,15 +1,16 @@
 import React from 'react';
 import { ViewMode } from '../types';
 import {
-    Combine,
-    FileOutput,
-    FileJson,
-    FileEdit,
-    Type,
-    Merge,
-    ArrowRight,
+    FileCode2,
+    BookOpen,
     Calculator,
-    ScanSearch
+    ScanSearch,
+    Edit3,
+    ArrowRightLeft,
+    Merge,
+    Variable,
+    FileJson,
+    ArrowRight
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -22,36 +23,43 @@ export function Dashboard({ setView }: DashboardProps) {
             id: 'combine',
             title: 'Combine Strings',
             description: 'Merge multiple .strings files into a single file',
-            icon: Combine,
+            icon: FileCode2, // Changed from Combine
             color: 'bg-blue-500',
         },
         {
             id: 'extract',
             title: 'Extract Catalog',
             description: 'Extract strings from .xcstrings catalog files',
-            icon: FileOutput,
+            icon: BookOpen, // Changed from FileOutput
             color: 'bg-purple-500',
         },
         {
             id: 'properties',
             title: 'Properties Converter',
             description: 'Convert .properties files to .strings format',
-            icon: FileJson,
+            icon: FileJson, // Changed from FileJson (but the icon was already FileJson, just keeping it consistent with the new import)
             color: 'bg-green-500',
         },
         {
             id: 'editor',
             title: 'File Editor',
             description: 'Edit and manage your localization files',
-            icon: FileEdit,
+            icon: Edit3, // Changed from FileEdit
             color: 'bg-orange-500',
         },
         {
             id: 'renamer',
             title: 'Key Renamer',
             description: 'Batch rename keys across multiple files',
-            icon: Type,
-            color: 'bg-pink-500',
+            icon: Variable, // Changed from Type
+            color: 'from-pink-500 to-rose-500', // Updated color
+        },
+        {
+            id: 'json-converter',
+            title: 'JSON Converter',
+            description: 'Convert between key-value JSON and .strings files.',
+            icon: FileJson,
+            color: 'from-yellow-400 to-amber-500',
         },
         {
             id: 'merge',

@@ -11,6 +11,7 @@ import { KeyRenamerView } from './components/KeyRenamerView';
 import { MergeStringsView } from './components/MergeStringsView';
 
 import { StringsAnalyserView } from './components/StringsAnalyserView';
+import { JsonConverterView } from './components/JsonConverterView';
 
 
 import { ThemeProvider } from './src/context/ThemeContext';
@@ -36,6 +37,8 @@ function App() {
 
       case 'analyser':
         return <StringsAnalyserView onBack={() => setView('dashboard')} />;
+      case 'json-converter':
+        return <JsonConverterView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;
