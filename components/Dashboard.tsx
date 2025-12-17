@@ -76,6 +76,13 @@ export function Dashboard({ setView }: DashboardProps) {
             icon: ScanSearch,
             color: 'bg-indigo-600',
         },
+        {
+            id: 'xml-converter',
+            title: 'XML Converter',
+            description: 'Convert .strings, .stringsdict, .xcstrings to Android XML',
+            icon: FileCode2,
+            color: 'bg-teal-500',
+        },
     ];
 
     return (

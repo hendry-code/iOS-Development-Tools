@@ -219,7 +219,7 @@ function escapeXml(str: string): string {
     return str.replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '\'': '&apos;', '"': '&quot;' }[c]!));
 }
 
-function generateSingleAndroidXml(data: ParsedStrings): string {
+export function generateSingleAndroidXml(data: ParsedStrings): string {
     const lines: string[] = [];
     Object.entries(data).forEach(([key, value]) => {
         const sanitizedKey = key.replace(/[^a-zA-Z0-9_]/g, '_');

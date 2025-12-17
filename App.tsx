@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { ViewMode } from './types';
 
@@ -12,6 +13,7 @@ import { MergeStringsView } from './components/MergeStringsView';
 
 import { StringsAnalyserView } from './components/StringsAnalyserView';
 import { JsonConverterView } from './components/JsonConverterView';
+import { XmlConverterView } from './components/XmlConverterView';
 
 
 import { ThemeProvider } from './src/context/ThemeContext';
@@ -39,6 +41,8 @@ function App() {
         return <StringsAnalyserView onBack={() => setView('dashboard')} />;
       case 'json-converter':
         return <JsonConverterView onBack={() => setView('dashboard')} />;
+      case 'xml-converter':
+        return <XmlConverterView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;
