@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { ArrowLeft, X, Download, FileEdit, Search, Upload, ChevronUp, ChevronDown } from 'lucide-react';
+import { DragDropZone } from './DragDropZone';
 
 interface FileEditorViewProps {
   onBack: () => void;
@@ -63,10 +64,7 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
     setCurrentMatchIndex(-1);
   }, [findTerm]);
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = event.target.files?.[0];
-    if (!selectedFile) return;
-
+  const processFile = (selectedFile: File) => {
     setError(null);
     const reader = new FileReader();
     reader.onload = () => {
@@ -80,8 +78,20 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
       setFile(null);
     };
     reader.readAsText(selectedFile);
+  }
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = event.target.files?.[0];
+    if (!selectedFile) return;
+    processFile(selectedFile);
     if (event.target) event.target.value = ''; // Allow re-uploading the same file
   };
+
+  const handleFilesDropped = (files: FileList) => {
+    if (files[0]) {
+      processFile(files[0]);
+    }
+  }
 
   const handleDownload = () => {
     if (!file) return;
@@ -303,19 +313,23 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
   );
 
   const renderUploadPrompt = () => (
-    <div className="flex flex-col items-center justify-center h-full">
+    <DragDropZone
+      onFilesDropped={handleFilesDropped}
+      className="flex flex-col items-center justify-center h-full"
+      isDraggingClass="border-blue-500 bg-blue-500/10"
+    >
       <label className="flex flex-col items-center justify-center w-full max-w-lg h-64 border-2 border-gray-700 border-dashed rounded-xl cursor-pointer bg-gray-800/30 hover:border-blue-500/50 hover:bg-gray-700/30 transition-all group">
         <div className="flex flex-col items-center justify-center pt-5 pb-6 text-center">
           <div className="p-4 bg-gray-800 rounded-full mb-4 group-hover:scale-110 transition-transform">
             <Upload className="w-8 h-8 text-gray-400 group-hover:text-blue-400 transition-colors" />
           </div>
-          <p className="mb-2 text-lg font-semibold text-gray-300">Click to upload a file</p>
+          <p className="mb-2 text-lg font-semibold text-gray-300">Drag & Drop or Click to upload</p>
           <p className="text-xs text-gray-500">Supports .strings, .xml, .properties, etc.</p>
         </div>
         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept=".strings,.stringsdict,.xml,.localizable,.properties,.xcstrings" className="hidden" />
       </label>
       {error && <p className="text-sm text-red-400 mt-4 bg-red-500/10 px-4 py-2 rounded-md border border-red-500/20">{error}</p>}
-    </div>
+    </DragDropZone>
   );
 
   return (

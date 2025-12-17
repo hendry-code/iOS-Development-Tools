@@ -3,6 +3,7 @@ import { ArrowLeft, X, Type, Trash2, Upload, Sparkles, FileText } from 'lucide-r
 import { parseStringsFile } from '../services/converter';
 import { CodeBlock } from './CodeBlock';
 import { ParsedStrings } from '../types';
+import { DragDropZone } from './DragDropZone';
 
 interface KeyRenamerViewProps {
     onBack: () => void;
@@ -62,17 +63,45 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
 
     const handleValCompUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files?.length) {
-            try {
-                const promises = Array.from(e.target.files).map(readFile);
-                const files = await Promise.all(promises);
-                setValCompFiles(prev => {
-                    const existingNames = new Set(prev.map(f => f.name));
-                    const newFiles = files.filter(f => !existingNames.has(f.name));
-                    return [...prev, ...newFiles];
-                });
-                setError(null);
-            } catch (err) { setError("Error reading value-comparable files"); }
+            await processValCompFiles(e.target.files);
         }
+    };
+
+    const processValCompFiles = async (fileList: FileList) => {
+        try {
+            const promises = Array.from(fileList).map(readFile);
+            const files = await Promise.all(promises);
+            setValCompFiles(prev => {
+                const existingNames = new Set(prev.map(f => f.name));
+                const newFiles = files.filter(f => !existingNames.has(f.name));
+                return [...prev, ...newFiles];
+            });
+            setError(null);
+        } catch (err) { setError("Error reading value-comparable files"); }
+    }
+
+    const handleSourceDropped = async (files: FileList) => {
+        if (files[0]) {
+            try {
+                const file = await readFile(files[0]);
+                setSourceFile(file);
+                setError(null);
+            } catch (err) { setError("Error reading source file"); }
+        }
+    };
+
+    const handleKeyCompDropped = async (files: FileList) => {
+        if (files[0]) {
+            try {
+                const file = await readFile(files[0]);
+                setKeyCompFile(file);
+                setError(null);
+            } catch (err) { setError("Error reading key-comparable file"); }
+        }
+    };
+
+    const handleValCompDropped = async (files: FileList) => {
+        await processValCompFiles(files);
     };
 
     const removeValCompFile = (name: string) => {
@@ -189,7 +218,11 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                 <div className="flex flex-col gap-4 md:overflow-y-auto pr-2 custom-scrollbar">
 
                     {/* Source File Input */}
-                    <div className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg">
+                    <DragDropZone
+                        onFilesDropped={handleSourceDropped}
+                        className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg"
+                        isDraggingClass="bg-blue-500/10 ring-2 ring-blue-500/50 border-blue-500"
+                    >
                         <h2 className="text-sm font-semibold text-gray-300 mb-3 flex justify-between items-center">
                             <span className="flex items-center gap-2"><FileText size={14} className="text-blue-400" /> 1. Source File</span>
                             <span className="text-xs text-gray-500 font-normal">(e.g. albanian.strings)</span>
@@ -201,14 +234,18 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                             </div>
                         ) : (
                             <button onClick={() => sourceInputRef.current?.click()} className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-700 rounded-xl hover:bg-gray-800/50 hover:border-blue-500/50 transition-all text-gray-400 text-sm group">
-                                <Upload className="w-4 h-4 mr-2 group-hover:text-blue-400 transition-colors" /> Upload Source .strings
+                                <Upload className="w-4 h-4 mr-2 group-hover:text-blue-400 transition-colors" /> Drag & Drop or Upload Source .strings
                             </button>
                         )}
                         <input type="file" ref={sourceInputRef} onChange={handleSourceUpload} accept=".strings" className="hidden" />
-                    </div>
+                    </DragDropZone>
 
                     {/* Key Comparable Input */}
-                    <div className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg">
+                    <DragDropZone
+                        onFilesDropped={handleKeyCompDropped}
+                        className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg"
+                        isDraggingClass="bg-purple-500/10 ring-2 ring-purple-500/50 border-purple-500"
+                    >
                         <h2 className="text-sm font-semibold text-gray-300 mb-1 flex justify-between items-center">
                             <span className="flex items-center gap-2"><FileText size={14} className="text-purple-400" /> 2. Key-Comparable File</span>
                             <span className="text-xs text-gray-500 font-normal">(e.g. OldLocalizable.strings)</span>
@@ -221,14 +258,18 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                             </div>
                         ) : (
                             <button onClick={() => keyCompInputRef.current?.click()} className="w-full flex items-center justify-center p-4 border-2 border-dashed border-gray-700 rounded-xl hover:bg-gray-800/50 hover:border-purple-500/50 transition-all text-gray-400 text-sm group">
-                                <Upload className="w-4 h-4 mr-2 group-hover:text-purple-400 transition-colors" /> Upload Key-Comparable
+                                <Upload className="w-4 h-4 mr-2 group-hover:text-purple-400 transition-colors" /> Drag & Drop or Upload Key-Comparable
                             </button>
                         )}
                         <input type="file" ref={keyCompInputRef} onChange={handleKeyCompUpload} accept=".strings" className="hidden" />
-                    </div>
+                    </DragDropZone>
 
                     {/* Value Comparable Inputs */}
-                    <div className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg flex-grow flex flex-col">
+                    <DragDropZone
+                        onFilesDropped={handleValCompDropped}
+                        className="bg-gray-800/30 backdrop-blur-md p-4 rounded-xl border border-gray-700/50 shadow-lg flex-grow flex flex-col min-h-0"
+                        isDraggingClass="bg-green-500/10 ring-2 ring-green-500/50 border-green-500"
+                    >
                         <h2 className="text-sm font-semibold text-gray-300 mb-1 flex justify-between items-center">
                             <span className="flex items-center gap-2"><FileText size={14} className="text-green-400" /> 3. Value-Comparable Files</span>
                             <span className="text-xs text-gray-500 font-normal">(NewLocalizable files)</span>
@@ -242,14 +283,14 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                                     <button onClick={() => removeValCompFile(f.name)} className="text-gray-500 hover:text-red-400 transition-colors"><X size={16} /></button>
                                 </div>
                             ))}
-                            {valCompFiles.length === 0 && <p className="text-xs text-gray-600 text-center py-8 border-2 border-dashed border-gray-800 rounded-lg">No files uploaded yet.</p>}
+                            {valCompFiles.length === 0 && <p className="text-xs text-gray-600 text-center py-8 border-2 border-dashed border-gray-800 rounded-lg">Drag & Drop or Upload files.</p>}
                         </div>
 
                         <button onClick={() => valCompInputRef.current?.click()} className="w-full flex items-center justify-center p-3 border border-gray-700 bg-gray-800/50 rounded-lg hover:bg-gray-700 transition-all text-gray-300 text-sm">
                             <Upload className="w-4 h-4 mr-2" /> Add Files
                         </button>
                         <input type="file" ref={valCompInputRef} onChange={handleValCompUpload} accept=".strings" multiple className="hidden" />
-                    </div>
+                    </DragDropZone>
 
                     <button
                         onClick={processRenaming}

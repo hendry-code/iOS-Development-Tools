@@ -14,6 +14,7 @@ import {
     Upload,
 } from 'lucide-react';
 import { CodeBlock } from './CodeBlock';
+import { DragDropZone } from './DragDropZone';
 
 interface PropertiesConverterViewProps {
     onBack: () => void;
@@ -38,12 +39,11 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFiles = event.target.files;
-        if (!selectedFiles || selectedFiles.length === 0) return;
+    const processFiles = async (filesToProcess: FileList | null) => {
+        if (!filesToProcess || filesToProcess.length === 0) return;
         setError(null);
         try {
-            const promises = Array.from(selectedFiles).map(readFileContent);
+            const promises = Array.from(filesToProcess).map(readFileContent);
             const newlyReadFiles = await Promise.all(promises);
             const existingFileNames = new Set(inputFiles.map(f => f.name));
             const uniqueNewFiles = newlyReadFiles.filter(f => !existingFileNames.has(f.name));
@@ -55,7 +55,15 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
         } catch (err) {
             setError("An error occurred while reading one or more files.");
         }
+    }
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        await processFiles(event.target.files);
         if (event.target) event.target.value = '';
+    };
+
+    const handleFilesDropped = async (files: FileList) => {
+        await processFiles(files);
     };
 
     const handleRemoveFile = (fileName: string) => {
@@ -141,23 +149,29 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
                 {/* Input Panel */}
                 <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl min-h-[400px] md:h-full md:overflow-hidden border border-gray-700/50 shadow-xl">
                     <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Input Files</h2>
-                    <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-800 p-2 space-y-2 min-h-[150px] custom-scrollbar">
-                        {inputFiles.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-2">
-                                <Upload size={24} className="opacity-50" />
-                                <p className="text-sm">Upload files to begin</p>
-                            </div>
-                        ) : (
-                            inputFiles.map(file => (
-                                <div key={file.name} className="flex items-center justify-between p-2 bg-gray-800/50 hover:bg-gray-800 rounded-md group transition-colors border border-transparent hover:border-gray-700">
-                                    <span className="text-sm font-mono text-gray-300 truncate pr-2" title={file.name}>{file.name}</span>
-                                    <button onClick={() => handleRemoveFile(file.name)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors opacity-0 group-hover:opacity-100">
-                                        <X size={14} />
-                                    </button>
+                    <DragDropZone
+                        onFilesDropped={handleFilesDropped}
+                        className="flex-grow flex flex-col min-h-[150px] overflow-hidden"
+                        isDraggingClass="border-green-500 bg-green-500/10 ring-2 ring-green-500/50"
+                    >
+                        <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-800 p-2 space-y-2 h-full custom-scrollbar transition-colors">
+                            {inputFiles.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-2">
+                                    <Upload size={24} className="opacity-50" />
+                                    <p className="text-sm">Drag & Drop or Upload files</p>
                                 </div>
-                            ))
-                        )}
-                    </div>
+                            ) : (
+                                inputFiles.map(file => (
+                                    <div key={file.name} className="flex items-center justify-between p-2 bg-gray-800/50 hover:bg-gray-800 rounded-md group transition-colors border border-transparent hover:border-gray-700">
+                                        <span className="text-sm font-mono text-gray-300 truncate pr-2" title={file.name}>{file.name}</span>
+                                        <button onClick={() => handleRemoveFile(file.name)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors opacity-0 group-hover:opacity-100">
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </DragDropZone>
                     {error && <p className="text-xs text-red-400 mt-2 flex-shrink-0 bg-red-500/10 p-2 rounded border border-red-500/20">{error}</p>}
                     <div className="flex items-center justify-between mt-4 flex-shrink-0 gap-3">
                         <button onClick={() => fileInputRef.current?.click()} className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-700 rounded-md hover:bg-gray-700 hover:text-white transition-all active:scale-95">

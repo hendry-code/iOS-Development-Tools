@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { ArrowLeft, Upload, X, Save, Merge, FileText, Plus } from 'lucide-react';
 import { LanguageFile } from '../types';
 import { mergeStringsIntoCatalog } from '../services/converter';
+import { DragDropZone } from './DragDropZone';
 
 interface MergeStringsViewProps {
     onBack: () => void;
@@ -55,6 +56,11 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
     const handleStringsUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFiles = event.target.files;
         if (!selectedFiles || selectedFiles.length === 0) return;
+        await processStringsFiles(selectedFiles);
+        if (event.target) event.target.value = '';
+    };
+
+    const processStringsFiles = async (selectedFiles: FileList) => {
         setError(null);
         try {
             const promises = Array.from(selectedFiles).map(readFile);
@@ -65,7 +71,22 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
         } catch (err) {
             setError("Failed to read one or more strings files.");
         }
-        if (event.target) event.target.value = '';
+    }
+
+    const handleCatalogDropped = async (files: FileList) => {
+        const file = files[0];
+        if (!file) return;
+        setError(null);
+        try {
+            const read = await readFile(file);
+            setSourceCatalog(read);
+        } catch (err) {
+            setError("Failed to read the catalog file.");
+        }
+    };
+
+    const handleStringsDropped = async (files: FileList) => {
+        await processStringsFiles(files);
     };
 
     const handleRemoveStringsFile = (fileName: string) => {
@@ -135,20 +156,26 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
                             Source Catalog (.xcstrings)
                         </h2>
                         <div className="bg-gray-900/30 rounded-lg border border-gray-700/50 p-2">
-                            {sourceCatalog ? (
-                                <div className="flex items-center justify-between p-2 bg-gray-800/50 rounded-md border border-gray-700/50">
-                                    <span className="text-sm font-mono text-gray-300 truncate pr-2" title={sourceCatalog.name}>{sourceCatalog.name}</span>
-                                    <button onClick={() => setSourceCatalog(null)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"><X size={16} /></button>
-                                </div>
-                            ) : (
-                                <button
-                                    className="w-full flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-700 rounded-lg hover:bg-gray-800/50 hover:border-purple-500/50 transition-all cursor-pointer group"
-                                    onClick={() => catalogInputRef.current?.click()}
-                                >
-                                    <Upload className="w-6 h-6 mb-2 text-gray-500 group-hover:text-purple-400 transition-colors" />
-                                    <p className="text-xs text-gray-400">Upload .xcstrings</p>
-                                </button>
-                            )}
+                            <DragDropZone
+                                onFilesDropped={handleCatalogDropped}
+                                className="w-full h-full"
+                                isDraggingClass="border-purple-500 bg-purple-500/10 ring-2 ring-purple-500/50"
+                            >
+                                {sourceCatalog ? (
+                                    <div className="flex items-center justify-between p-2 bg-gray-800/50 rounded-md border border-gray-700/50">
+                                        <span className="text-sm font-mono text-gray-300 truncate pr-2" title={sourceCatalog.name}>{sourceCatalog.name}</span>
+                                        <button onClick={() => setSourceCatalog(null)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"><X size={16} /></button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        className="w-full flex flex-col items-center justify-center p-4 border-2 border-dashed border-gray-700 rounded-lg hover:bg-gray-800/50 hover:border-purple-500/50 transition-all cursor-pointer group"
+                                        onClick={() => catalogInputRef.current?.click()}
+                                    >
+                                        <Upload className="w-6 h-6 mb-2 text-gray-500 group-hover:text-purple-400 transition-colors" />
+                                        <p className="text-xs text-gray-400">Drag & Drop or Upload .xcstrings</p>
+                                    </button>
+                                )}
+                            </DragDropZone>
                             <input type="file" ref={catalogInputRef} onChange={handleCatalogUpload} accept=".xcstrings" className="hidden" />
                         </div>
                     </div>
@@ -159,33 +186,39 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
                             <div className="w-5 h-5 rounded-full bg-blue-500/20 flex items-center justify-center text-xs font-bold text-blue-400">2</div>
                             Translations (.strings)
                         </h2>
-                        <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-700/50 p-2 space-y-2 custom-scrollbar">
-                            {stringsFiles.length === 0 ? (
-                                <button
-                                    className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-700 rounded-lg hover:bg-gray-800/50 hover:border-blue-500/50 transition-all cursor-pointer group min-h-[100px]"
-                                    onClick={() => stringsInputRef.current?.click()}
-                                >
-                                    <Upload className="w-6 h-6 mb-2 text-gray-500 group-hover:text-blue-400 transition-colors" />
-                                    <p className="text-xs text-gray-400">Upload .strings files</p>
-                                </button>
-                            ) : (
-                                stringsFiles.map((file) => (
-                                    <div key={file.name} className="flex items-center justify-between p-2 bg-gray-800/50 rounded-md border border-gray-700/50 hover:border-gray-600 transition-colors">
-                                        <span className="text-sm font-mono text-gray-300 truncate pr-2" title={file.name}>{file.name}</span>
-                                        <div className="flex items-center space-x-2">
-                                            <input
-                                                type="text"
-                                                value={file.langCode}
-                                                onChange={(e) => handleLangCodeChange(file.name, e.target.value)}
-                                                placeholder="lang"
-                                                className="w-16 text-xs p-1 bg-gray-900 border border-gray-700 rounded text-gray-400 focus:text-white focus:border-blue-500 focus:outline-none text-center"
-                                            />
-                                            <button onClick={() => handleRemoveStringsFile(file.name)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"><X size={14} /></button>
+                        <DragDropZone
+                            onFilesDropped={handleStringsDropped}
+                            className="flex-grow flex flex-col min-h-0 overflow-hidden"
+                            isDraggingClass="border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/50"
+                        >
+                            <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-700/50 p-2 space-y-2 custom-scrollbar h-full">
+                                {stringsFiles.length === 0 ? (
+                                    <button
+                                        className="w-full h-full flex flex-col items-center justify-center border-2 border-dashed border-gray-700 rounded-lg hover:bg-gray-800/50 hover:border-blue-500/50 transition-all cursor-pointer group min-h-[100px]"
+                                        onClick={() => stringsInputRef.current?.click()}
+                                    >
+                                        <Upload className="w-6 h-6 mb-2 text-gray-500 group-hover:text-blue-400 transition-colors" />
+                                        <p className="text-xs text-gray-400">Drag & Drop or Upload .strings files</p>
+                                    </button>
+                                ) : (
+                                    stringsFiles.map((file) => (
+                                        <div key={file.name} className="flex items-center justify-between p-2 bg-gray-800/50 rounded-md border border-gray-700/50 hover:border-gray-600 transition-colors">
+                                            <span className="text-sm font-mono text-gray-300 truncate pr-2" title={file.name}>{file.name}</span>
+                                            <div className="flex items-center space-x-2">
+                                                <input
+                                                    type="text"
+                                                    value={file.langCode}
+                                                    onChange={(e) => handleLangCodeChange(file.name, e.target.value)}
+                                                    placeholder="lang"
+                                                    className="w-16 text-xs p-1 bg-gray-900 border border-gray-700 rounded text-gray-400 focus:text-white focus:border-blue-500 focus:outline-none text-center"
+                                                />
+                                                <button onClick={() => handleRemoveStringsFile(file.name)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors"><X size={14} /></button>
+                                            </div>
                                         </div>
-                                    </div>
-                                ))
-                            )}
-                        </div>
+                                    ))
+                                )}
+                            </div>
+                        </DragDropZone>
                         <div className="mt-2 flex justify-end">
                             <button onClick={() => stringsInputRef.current?.click()} className="text-xs text-blue-400 hover:text-blue-300 flex items-center space-x-1 px-2 py-1 rounded hover:bg-blue-500/10 transition-colors">
                                 <Plus size={14} /> <span>Add more files</span>

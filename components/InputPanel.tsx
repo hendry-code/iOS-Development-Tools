@@ -1,6 +1,7 @@
 import React, { useRef, useState, useMemo, useEffect } from 'react';
 import { Upload, X } from 'lucide-react';
 import { LanguageFile, ConversionMode } from '../types';
+import { DragDropZone } from './DragDropZone';
 
 interface InputPanelProps {
     conversionMode: ConversionMode;
@@ -65,8 +66,7 @@ export const InputPanel: React.FC<InputPanelProps> = (props) => {
             return files.filter(file => file.name.toLowerCase().includes(searchTerm.toLowerCase()));
         }, [files, searchTerm]);
 
-        const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const selectedFiles = event.target.files;
+        const processFiles = async (selectedFiles: FileList | null) => {
             if (!selectedFiles || selectedFiles.length === 0) return;
             setError(null);
             try {
@@ -78,7 +78,15 @@ export const InputPanel: React.FC<InputPanelProps> = (props) => {
             } catch (err) {
                 setError("An error occurred while reading one or more files.");
             }
+        }
+
+        const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+            await processFiles(event.target.files);
             if (event.target) event.target.value = '';
+        };
+
+        const handleFilesDropped = async (droppedFiles: FileList) => {
+            await processFiles(droppedFiles);
         };
 
         const handleRemoveFile = (fileName: string) => {
@@ -103,34 +111,40 @@ export const InputPanel: React.FC<InputPanelProps> = (props) => {
                         />
                     </div>
                 )}
-                <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-800 p-2 space-y-2 min-h-[150px] custom-scrollbar">
-                    {files.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-2">
-                            <Upload size={24} className="opacity-50" />
-                            <p className="text-sm">Upload files to begin</p>
-                        </div>
-                    ) : filteredFiles.length === 0 ? (
-                        <div className="flex items-center justify-center h-full text-gray-500"><p>No files match your search.</p></div>
-                    ) : (
-                        filteredFiles.map((file) => (
-                            <div key={file.name} className="flex items-center justify-between p-2 bg-gray-800/50 hover:bg-gray-800 rounded-md group transition-colors border border-transparent hover:border-gray-700">
-                                <span className="text-sm font-mono text-gray-300 truncate pr-2" title={file.name}>{file.name}</span>
-                                <div className="flex items-center space-x-2">
-                                    <input
-                                        type="text"
-                                        value={file.langCode}
-                                        onChange={(e) => handleLangCodeChange(file.name, e.target.value)}
-                                        placeholder="lang"
-                                        className="w-16 text-xs p-1 bg-gray-900 border border-gray-700 rounded text-gray-400 focus:text-white focus:border-blue-500 focus:outline-none text-center"
-                                    />
-                                    <button onClick={() => handleRemoveFile(file.name)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors opacity-0 group-hover:opacity-100">
-                                        <X size={14} />
-                                    </button>
-                                </div>
+                <DragDropZone
+                    onFilesDropped={handleFilesDropped}
+                    className="flex-grow flex flex-col min-h-[150px] overflow-hidden"
+                    isDraggingClass="border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/50"
+                >
+                    <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-800 p-2 space-y-2 h-full custom-scrollbar transition-colors">
+                        {files.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-2">
+                                <Upload size={24} className="opacity-50" />
+                                <p className="text-sm">Drag & Drop or Upload files</p>
                             </div>
-                        ))
-                    )}
-                </div>
+                        ) : filteredFiles.length === 0 ? (
+                            <div className="flex items-center justify-center h-full text-gray-500"><p>No files match your search.</p></div>
+                        ) : (
+                            filteredFiles.map((file) => (
+                                <div key={file.name} className="flex items-center justify-between p-2 bg-gray-800/50 hover:bg-gray-800 rounded-md group transition-colors border border-transparent hover:border-gray-700">
+                                    <span className="text-sm font-mono text-gray-300 truncate pr-2" title={file.name}>{file.name}</span>
+                                    <div className="flex items-center space-x-2">
+                                        <input
+                                            type="text"
+                                            value={file.langCode}
+                                            onChange={(e) => handleLangCodeChange(file.name, e.target.value)}
+                                            placeholder="lang"
+                                            className="w-16 text-xs p-1 bg-gray-900 border border-gray-700 rounded text-gray-400 focus:text-white focus:border-blue-500 focus:outline-none text-center"
+                                        />
+                                        <button onClick={() => handleRemoveFile(file.name)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors opacity-0 group-hover:opacity-100">
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </DragDropZone>
                 {error && <p className="text-xs text-red-400 mt-2 flex-shrink-0 bg-red-500/10 p-2 rounded border border-red-500/20">{error}</p>}
                 <div className="flex items-center justify-between mt-4 flex-shrink-0 gap-3">
                     <button onClick={handleUploadClick} className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-700 rounded-md hover:bg-gray-700 hover:text-white transition-all active:scale-95">
@@ -153,9 +167,7 @@ export const InputPanel: React.FC<InputPanelProps> = (props) => {
     const renderCatalogToStrings = () => {
         const { catalogFile, onCatalogFileChange, onConvert, isLoading, error, setError } = props;
 
-        const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-            const file = event.target.files?.[0];
-            if (!file) return;
+        const processFile = async (file: File) => {
             setError(null);
             try {
                 const read = await readFile(file);
@@ -163,32 +175,50 @@ export const InputPanel: React.FC<InputPanelProps> = (props) => {
             } catch (err) {
                 setError("An error occurred while reading the file.");
             }
+        }
+
+        const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            await processFile(file);
             if (event.target) event.target.value = '';
         };
+
+        const handleFilesDropped = async (droppedFiles: FileList) => {
+            const file = droppedFiles[0];
+            if (!file) return;
+            await processFile(file);
+        }
 
         return (
             <>
                 <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Input Catalog (.xcstrings)</h2>
-                <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-800 p-2 space-y-2 min-h-[150px] custom-scrollbar">
-                    {catalogFile ? (
-                        <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-md border border-gray-700">
-                            <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 rounded bg-purple-500/20 flex items-center justify-center text-purple-400">
-                                    <span className="text-xs font-bold">XC</span>
+                <DragDropZone
+                    onFilesDropped={handleFilesDropped}
+                    className="flex-grow flex flex-col min-h-[150px] overflow-hidden"
+                    isDraggingClass="border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/50"
+                >
+                    <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-800 p-2 space-y-2 h-full custom-scrollbar transition-colors">
+                        {catalogFile ? (
+                            <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-md border border-gray-700">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded bg-purple-500/20 flex items-center justify-center text-purple-400">
+                                        <span className="text-xs font-bold">XC</span>
+                                    </div>
+                                    <span className="text-sm font-medium text-gray-200 truncate" title={catalogFile.name}>{catalogFile.name}</span>
                                 </div>
-                                <span className="text-sm font-medium text-gray-200 truncate" title={catalogFile.name}>{catalogFile.name}</span>
+                                <button onClick={() => onCatalogFileChange(null)} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors">
+                                    <X size={16} />
+                                </button>
                             </div>
-                            <button onClick={() => onCatalogFileChange(null)} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors">
-                                <X size={16} />
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-2">
-                            <Upload size={24} className="opacity-50" />
-                            <p className="text-sm">Upload .xcstrings file</p>
-                        </div>
-                    )}
-                </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-2">
+                                <Upload size={24} className="opacity-50" />
+                                <p className="text-sm">Drag & Drop or Upload .xcstrings file</p>
+                            </div>
+                        )}
+                    </div>
+                </DragDropZone>
                 {error && <p className="text-xs text-red-400 mt-2 flex-shrink-0 bg-red-500/10 p-2 rounded border border-red-500/20">{error}</p>}
                 <div className="flex items-center justify-between mt-4 flex-shrink-0 gap-3">
                     <button onClick={handleUploadClick} className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-700 rounded-md hover:bg-gray-700 hover:text-white transition-all active:scale-95">

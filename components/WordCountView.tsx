@@ -3,6 +3,7 @@ import React, { useState, useRef } from 'react';
 import { ArrowLeft, Upload, X, Calculator, FileText } from 'lucide-react';
 import { LanguageFile } from '../types';
 import { calculateTotalWords, WordCountResult, FileWordCount } from '../services/wordCounter';
+import { DragDropZone } from './DragDropZone';
 
 interface WordCountViewProps {
     onBack: () => void;
@@ -31,8 +32,7 @@ export const WordCountView: React.FC<WordCountViewProps> = ({ onBack }) => {
         });
     };
 
-    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const selectedFiles = event.target.files;
+    const processFiles = async (selectedFiles: FileList | null) => {
         if (!selectedFiles || selectedFiles.length === 0) return;
 
         try {
@@ -48,7 +48,15 @@ export const WordCountView: React.FC<WordCountViewProps> = ({ onBack }) => {
         } catch (err) {
             console.error("Error reading files:", err);
         }
+    }
+
+    const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        await processFiles(event.target.files);
         if (event.target) event.target.value = '';
+    };
+
+    const handleFilesDropped = async (droppedFiles: FileList) => {
+        await processFiles(droppedFiles);
     };
 
     const handleRemoveFile = (fileName: string) => {
@@ -87,26 +95,32 @@ export const WordCountView: React.FC<WordCountViewProps> = ({ onBack }) => {
                 <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl h-full overflow-hidden border border-gray-700/50 shadow-xl">
                     <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Input Files</h2>
 
-                    <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-800 p-2 space-y-2 min-h-[150px] custom-scrollbar">
-                        {files.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-2">
-                                <Upload size={24} className="opacity-50" />
-                                <p className="text-sm">Upload files to begin</p>
-                            </div>
-                        ) : (
-                            files.map((file) => (
-                                <div key={file.name} className="flex items-center justify-between p-2 bg-gray-800/50 hover:bg-gray-800 rounded-md group transition-colors border border-transparent hover:border-gray-700">
-                                    <div className="flex items-center gap-2 overflow-hidden">
-                                        <FileText size={16} className="text-gray-400 flex-shrink-0" />
-                                        <span className="text-sm font-mono text-gray-300 truncate" title={file.name}>{file.name}</span>
-                                    </div>
-                                    <button onClick={() => handleRemoveFile(file.name)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors opacity-0 group-hover:opacity-100">
-                                        <X size={14} />
-                                    </button>
+                    <DragDropZone
+                        onFilesDropped={handleFilesDropped}
+                        className="flex-grow flex flex-col min-h-[150px] overflow-hidden"
+                        isDraggingClass="border-teal-500 bg-teal-500/10 ring-2 ring-teal-500/50"
+                    >
+                        <div className="flex-grow overflow-y-auto bg-gray-900/30 rounded-lg border border-gray-800 p-2 space-y-2 h-full custom-scrollbar transition-colors">
+                            {files.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-2">
+                                    <Upload size={24} className="opacity-50" />
+                                    <p className="text-sm">Drag & Drop or Upload files</p>
                                 </div>
-                            ))
-                        )}
-                    </div>
+                            ) : (
+                                files.map((file) => (
+                                    <div key={file.name} className="flex items-center justify-between p-2 bg-gray-800/50 hover:bg-gray-800 rounded-md group transition-colors border border-transparent hover:border-gray-700">
+                                        <div className="flex items-center gap-2 overflow-hidden">
+                                            <FileText size={16} className="text-gray-400 flex-shrink-0" />
+                                            <span className="text-sm font-mono text-gray-300 truncate" title={file.name}>{file.name}</span>
+                                        </div>
+                                        <button onClick={() => handleRemoveFile(file.name)} className="p-1 text-gray-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors opacity-0 group-hover:opacity-100">
+                                            <X size={14} />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </DragDropZone>
 
                     <div className="flex items-center justify-between mt-4 flex-shrink-0 gap-3">
                         <button onClick={handleUploadClick} className="flex items-center space-x-2 px-4 py-2 text-sm font-medium text-gray-300 bg-gray-800 border border-gray-700 rounded-md hover:bg-gray-700 hover:text-white transition-all active:scale-95">
