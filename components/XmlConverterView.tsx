@@ -241,7 +241,7 @@ export const XmlConverterView: React.FC<XmlConverterViewProps> = ({ onBack }) =>
                             </div>
                         ) : (
                             <div className="h-full overflow-y-auto custom-scrollbar p-1">
-                                {Object.entries(outputs).map(([key, content]) => {
+                                {Object.entries(outputs).map(([key, content]: [string, string]) => {
                                     // Determine display name
                                     const displayName = key === 'strings.xml' ? 'strings.xml' : `values-${key}/strings.xml`;
                                     const downloadName = key === 'strings.xml' ? 'strings.xml' : `strings-${key}.xml`;
