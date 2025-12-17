@@ -90,9 +90,9 @@ export const WordCountView: React.FC<WordCountViewProps> = ({ onBack }) => {
                 </div>
             </header>
 
-            <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0">
+            <div className="flex-grow flex flex-col lg:grid lg:grid-cols-2 gap-6 min-h-0">
                 {/* Input Section */}
-                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl h-full overflow-hidden border border-gray-700/50 shadow-xl">
+                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl min-h-[500px] lg:h-full overflow-hidden border border-gray-700/50 shadow-xl">
                     <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Input Files</h2>
 
                     <DragDropZone
@@ -145,7 +145,7 @@ export const WordCountView: React.FC<WordCountViewProps> = ({ onBack }) => {
                 </div>
 
                 {/* Result Section */}
-                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl h-full overflow-hidden border border-gray-700/50 shadow-xl relative">
+                <div className="flex flex-col bg-gray-800/30 backdrop-blur-md p-4 rounded-xl min-h-[500px] lg:h-full overflow-hidden border border-gray-700/50 shadow-xl relative">
                     <h2 className="text-sm font-semibold text-gray-400 mb-3 flex-shrink-0 uppercase tracking-wider">Results</h2>
 
                     {result ? (

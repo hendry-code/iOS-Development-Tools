@@ -127,7 +127,7 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
     };
 
     return (
-        <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans">
+        <div className="flex flex-col min-h-screen md:h-screen bg-slate-900 text-slate-100 font-sans">
             {/* Header */}
             <div className="flex items-center px-6 py-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur-md sticky top-0 z-10">
                 <button
@@ -145,9 +145,9 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
                 </div>
             </div>
 
-            <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+            <div className="flex-1 flex flex-col md:flex-row md:overflow-hidden">
                 {/* Left Panel: Inputs */}
-                <div className="w-full md:w-1/3 md:max-w-md p-6 border-r border-slate-700 overflow-y-auto bg-slate-900/50 flex flex-col">
+                <div className="w-full md:w-1/3 md:max-w-md p-6 border-r border-slate-700 overflow-visible md:overflow-y-auto bg-slate-900/50 flex flex-col min-h-0">
 
                     {/* Source Catalog Section */}
                     <div className="flex-shrink-0 mb-6">
@@ -271,7 +271,7 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
                 </div>
 
                 {/* Right Panel: Output */}
-                <div className="flex-1 overflow-y-auto bg-slate-950 p-6 flex flex-col">
+                <div className="w-full md:flex-1 min-h-[500px] md:min-h-0 md:h-full overflow-visible md:overflow-y-auto bg-slate-950 p-6 flex flex-col border-t md:border-t-0 border-slate-800">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Output Result</h2>
                         {mergedOutput && (

@@ -251,10 +251,10 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
 
 
   const renderEditor = () => (
-    <div className="flex flex-col h-full bg-slate-950 p-6">
+    <div className="flex flex-col h-[80vh] md:h-full bg-slate-950 p-6 border-t md:border-t-0 border-slate-800">
       <div className="flex items-center justify-between mb-3 flex-shrink-0">
         <div className="flex items-center space-x-4">
-          <span className="text-md font-semibold text-slate-200 font-mono">{file?.name}</span>
+          <span className="text-md font-semibold text-slate-200 font-mono truncate max-w-[150px] md:max-w-none">{file?.name}</span>
           <button onClick={() => setShowFind(!showFind)} className={`p-2 rounded-lg transition-colors ${showFind ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:bg-slate-800'}`} title="Find & Replace">
             <Search className="w-5 h-5" />
           </button>
@@ -338,7 +338,7 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
   );
 
   return (
-    <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans">
+    <div className="flex flex-col min-h-screen md:h-screen bg-slate-900 text-slate-100 font-sans">
       <header className="flex items-center px-6 py-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur-md sticky top-0 z-10">
         <button
           onClick={onBack}
@@ -355,7 +355,7 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
         </div>
       </header>
 
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex-1 flex flex-col md:overflow-hidden">
         {file ? renderEditor() : renderUploadPrompt()}
       </div>
     </div>

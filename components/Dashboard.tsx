@@ -96,7 +96,7 @@ export function Dashboard({ setView }: DashboardProps) {
                 </p>
             </header>
 
-            <div className="w-full max-w-7xl grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4">
+            <div className="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4">
                 {tools.map((tool) => {
                     const Icon = tool.icon;
                     return (
