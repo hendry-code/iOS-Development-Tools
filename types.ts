@@ -36,4 +36,4 @@ export type ParsedMultiLanguageStrings = Record<string, Record<string, StringVal
 
 export type ConversionMode = 'stringsToCatalog' | 'catalogToStrings';
 
-export type ViewMode = 'dashboard' | 'combine' | 'extract' | 'properties' | 'editor' | 'renamer' | 'merge' | 'wordcount';
+export type ViewMode = 'dashboard' | 'combine' | 'extract' | 'properties' | 'editor' | 'renamer' | 'merge' | 'wordcount' | 'analyser';

@@ -8,7 +8,8 @@ import {
     Type,
     Merge,
     ArrowRight,
-    Calculator
+    Calculator,
+    ScanSearch
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -65,6 +66,13 @@ export function Dashboard({ setView }: DashboardProps) {
             description: 'Count words in .xcstrings, .strings, .xml, and .stringsdict files',
             icon: Calculator,
             color: 'bg-teal-500',
+        },
+        {
+            id: 'analyser',
+            title: 'Strings Analyser',
+            description: 'Deep analysis for .xcstrings and .xml files',
+            icon: ScanSearch,
+            color: 'bg-indigo-600',
         },
     ];
 

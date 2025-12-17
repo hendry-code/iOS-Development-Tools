@@ -127,7 +127,7 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
     };
 
     return (
-        <div className="flex flex-col min-h-screen md:h-full space-y-6 p-4 md:p-8">
+        <div className="flex flex-col min-h-screen md:h-screen md:overflow-hidden space-y-6 p-4 md:p-8">
             <header className="flex items-center justify-between pb-4 border-b border-gray-700/50 flex-shrink-0">
                 <div className="flex items-center gap-4">
                     <button onClick={onBack} className="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors group" title="Back to Dashboard">
