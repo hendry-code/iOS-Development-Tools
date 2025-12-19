@@ -10,7 +10,8 @@ import {
     Merge,
     Variable,
     FileJson,
-    ArrowRight
+    ArrowRight,
+    Braces
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -82,6 +83,14 @@ export function Dashboard({ setView }: DashboardProps) {
             description: 'Convert .strings, .stringsdict, .xcstrings to Android XML',
             icon: FileCode2,
             color: 'bg-teal-500',
+        },
+
+        {
+            id: 'json-formatter',
+            title: 'JSON Beautifier',
+            description: 'Format, validate, and convert JSON data',
+            icon: Braces, // Need to add Braces to imports or use FileJson
+            color: 'bg-yellow-500',
         },
     ];
 

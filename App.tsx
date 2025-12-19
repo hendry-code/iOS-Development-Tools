@@ -13,6 +13,7 @@ import { MergeStringsView } from './components/MergeStringsView';
 
 import { StringsAnalyserView } from './components/StringsAnalyserView';
 import { JsonConverterView } from './components/JsonConverterView';
+import { JsonFormatterView } from './components/JsonFormatterView';
 import { XmlConverterView } from './components/XmlConverterView';
 
 
@@ -43,6 +44,8 @@ function App() {
         return <JsonConverterView onBack={() => setView('dashboard')} />;
       case 'xml-converter':
         return <XmlConverterView onBack={() => setView('dashboard')} />;
+      case 'json-formatter':
+        return <JsonFormatterView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;
