@@ -175,24 +175,27 @@ export function JsonFormatterView({ onBack }: JsonFormatterViewProps) {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-slate-900 text-slate-100">
+        <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans">
             {/* Header */}
-            <header className="flex items-center justify-between px-6 py-4 bg-slate-800 border-b border-slate-700 shadow-sm z-10">
+            <header className="flex items-center justify-between px-6 py-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur-md sticky top-0 z-10">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={onBack}
-                        className="p-2 hover:bg-slate-700 rounded-full transition-colors text-slate-400 hover:text-white"
+                        className="p-2 hover:bg-slate-700 rounded-full transition-all transform hover:scale-105 active:scale-95 text-slate-400 hover:text-white"
                         title="Back to Dashboard"
                     >
-                        <ArrowLeft size={20} />
+                        <ArrowLeft size={24} />
                     </button>
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-lg shadow-lg">
+                        <div className="p-2 bg-gradient-to-br from-indigo-500 to-cyan-600 rounded-lg shadow-lg">
                             <Braces size={20} className="text-white" />
                         </div>
-                        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-100 to-slate-400">
-                            JSON Beautifier
-                        </h1>
+                        <div>
+                            <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                                JSON Beautifier
+                            </h1>
+                            <p className="text-slate-400 text-xs">Format, Validate & Minify JSON</p>
+                        </div>
                     </div>
                 </div>
 
@@ -205,7 +208,7 @@ export function JsonFormatterView({ onBack }: JsonFormatterViewProps) {
                     </button>
                     <button
                         onClick={clearAll}
-                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-400 hover:text-white hover:bg-red-500/20 border border-transparent hover:border-red-500/50 rounded-md transition-all"
+                        className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 border border-transparent hover:border-rose-500/30 rounded-md transition-all"
                     >
                         <Trash2 size={14} /> Clear
                     </button>
@@ -317,8 +320,8 @@ export function JsonFormatterView({ onBack }: JsonFormatterViewProps) {
                 </div>
 
                 {/* Output Section */}
-                <div className="w-1/2 flex flex-col bg-slate-900/50">
-                    <div className="flex items-center justify-between p-2 border-b border-slate-700/50 bg-slate-800/30">
+                <div className="w-1/2 flex flex-col bg-slate-950">
+                    <div className="flex items-center justify-between p-2 border-b border-slate-800 bg-slate-800/30">
                         <div className="flex gap-1 bg-slate-900/50 p-1 rounded-lg">
                             <button
                                 onClick={() => setActiveTab('code')}
