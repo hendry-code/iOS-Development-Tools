@@ -6,6 +6,7 @@ import {
     parseStringsFile,
     parseStringsDictFile,
     parseStringCatalog,
+    parseJson,
     generateSingleAndroidXml,
     generateAllAndroidXml,
 } from '../services/converter';
@@ -61,8 +62,12 @@ export const XmlConverterView: React.FC<XmlConverterViewProps> = ({ onBack }) =>
                     const parsed = parseStringsDictFile(content);
                     const xml = generateSingleAndroidXml(parsed);
                     setOutputs({ 'strings.xml': xml });
+                } else if (fileName.endsWith('.json')) {
+                    const parsed = parseJson(content);
+                    const xml = generateSingleAndroidXml(parsed);
+                    setOutputs({ 'strings.xml': xml });
                 } else {
-                    throw new Error("Unsupported file format. Please upload .strings, .stringsdict, or .xcstrings.");
+                    throw new Error("Unsupported file format. Please upload .strings, .stringsdict, .json, or .xcstrings.");
                 }
             } catch (err: any) {
                 setError(err.message || "An error occurred during conversion.");
@@ -133,7 +138,7 @@ export const XmlConverterView: React.FC<XmlConverterViewProps> = ({ onBack }) =>
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-teal-400 to-emerald-500 bg-clip-text text-transparent">
                         XML Converter
                     </h1>
-                    <p className="text-slate-400 text-sm">Convert .strings, .stringsdict, .xcstrings to Android XML</p>
+                    <p className="text-slate-400 text-sm">Convert .strings, .stringsdict, .json, .xcstrings to Android XML</p>
                 </div>
                 {/* Placeholder for future save/load actions if aligning strictly with Extract View, 
                      but for now user only asked for UI similarity, not necessarily project persistence. 
@@ -187,7 +192,7 @@ export const XmlConverterView: React.FC<XmlConverterViewProps> = ({ onBack }) =>
                                     <h3 className="text-sm font-medium text-slate-400 group-hover:text-emerald-400 transition-colors">
                                         Upload File
                                     </h3>
-                                    <p className="text-xs text-slate-500 mt-1">.xcstrings, .strings, .stringsdict</p>
+                                    <p className="text-xs text-slate-500 mt-1">.xcstrings, .strings, .stringsdict, .json</p>
                                 </div>
                             )}
                             <input
@@ -195,7 +200,7 @@ export const XmlConverterView: React.FC<XmlConverterViewProps> = ({ onBack }) =>
                                 ref={fileInputRef}
                                 onChange={handleFileSelect}
                                 className="hidden"
-                                accept=".strings,.stringsdict,.xcstrings"
+                                accept=".strings,.stringsdict,.xcstrings,.json"
                             />
                         </DragDropZone>
                     </div>
