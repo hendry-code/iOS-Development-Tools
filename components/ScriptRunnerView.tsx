@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import Editor from '@monaco-editor/react';
-import { ArrowLeft, Play, Upload, Trash2, Copy, FileText, Terminal, Code2, File, Info, X } from 'lucide-react';
+import { ArrowLeft, Play, Upload, Trash2, Copy, FileText, Terminal, Code2, File, Info, X, Check } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 import { ResizableLayout } from './ResizableLayout';
 import { VerticalSplitPane } from './VerticalSplitPane';
@@ -23,6 +23,7 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
     const [output, setOutput] = useState<string>('');
     const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
     const [showHelp, setShowHelp] = useState(false);
+    const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scriptInputRef = useRef<HTMLInputElement>(null);
@@ -33,6 +34,12 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
         const sizes = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
         return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    };
+
+    const handleCopySnippet = (id: string, code: string) => {
+        navigator.clipboard.writeText(code);
+        setCopiedSnippet(id);
+        setTimeout(() => setCopiedSnippet(null), 2000);
     };
 
     const handleRun = () => {
@@ -204,14 +211,141 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
                             <div className="space-y-6 text-sm text-slate-300 leading-relaxed">
                                 <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
                                     <h3 className="font-bold text-white mb-2">Global Variables</h3>
-                                    <ul className="space-y-3">
+                                    <ul className="space-y-4">
                                         <li>
-                                            <code className="bg-slate-900 px-1.5 py-0.5 rounded text-indigo-300">files</code>: Array of File objects.
+                                            <code className="bg-slate-900 px-1.5 py-0.5 rounded text-indigo-300 font-bold">files</code>
+                                            <div className="mt-1 text-slate-400 mb-2">Array of file objects currently loaded.</div>
+                                            <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-slate-400 overflow-x-auto border border-slate-800">
+                                                {files.length > 0 ? `// Example based on your uploaded file:
+[
+  {
+    name: "${files[0].name}",
+    type: "${files[0].type}",
+    size: ${files[0].size},
+    content: "${files[0].content.substring(0, 50).replace(/\n/g, '\\n')}..."
+  }${files.length > 1 ? `,\n  ... (${files.length - 1} more files)` : ''}
+]` : `// No files loaded. Example structure:
+[
+  {
+    name: "example.json",
+    type: "json", 
+    size: 1024,
+    content: "..."
+  }
+]`}
+                                            </pre>
                                         </li>
                                         <li>
-                                            <code className="bg-slate-900 px-1.5 py-0.5 rounded text-indigo-300">console</code>: Standard console methods.
+                                            <code className="bg-slate-900 px-1.5 py-0.5 rounded text-indigo-300 font-bold">console</code>
+                                            <div className="mt-1 text-slate-400">Standard console methods: <code>log</code>, <code>warn</code>, <code>error</code>, <code>info</code></div>
                                         </li>
                                     </ul>
+                                </div>
+
+                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                    <h3 className="font-bold text-white mb-2">Code Snippets</h3>
+
+                                    {files.length > 0 && files[0].type === 'json' ? (
+                                        <div className="mb-4">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="text-xs font-bold text-indigo-300 uppercase">JSON Processing</div>
+                                                <button
+                                                    onClick={() => handleCopySnippet('json', `files.forEach(f => {
+  if (f.type === 'json') {
+    const data = JSON.parse(f.content);
+    console.log("Parsed " + f.name);
+    // ... work with data
+  }
+});`)}
+                                                    className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'json'
+                                                            ? 'bg-green-500/20 text-green-400'
+                                                            : 'hover:bg-slate-700 text-slate-400 hover:text-white'
+                                                        }`}
+                                                    title="Copy Snippet"
+                                                >
+                                                    {copiedSnippet === 'json' ? (
+                                                        <>
+                                                            <Check size={12} />
+                                                            <span className="text-[10px] font-bold">Copied!</span>
+                                                        </>
+                                                    ) : (
+                                                        <Copy size={12} />
+                                                    )}
+                                                </button>
+                                            </div>
+                                            <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-green-300 overflow-x-auto">
+                                                {`files.forEach(f => {
+  if (f.type === 'json') {
+    const data = JSON.parse(f.content);
+    console.log("Parsed " + f.name);
+    // ... work with data
+  }
+});`}
+                                            </pre>
+                                        </div>
+                                    ) : files.length > 0 && (files[0].type === 'strings' || files[0].type === 'xcstrings') ? (
+                                        <div className="mb-4">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="text-xs font-bold text-indigo-300 uppercase">Strings Parsing</div>
+                                                <button
+                                                    onClick={() => handleCopySnippet('strings', `files.forEach(f => {
+  const lines = f.content.split('\\n');
+  console.log("Reading " + f.name + ": " + lines.length + " lines");
+});`)}
+                                                    className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'strings'
+                                                            ? 'bg-green-500/20 text-green-400'
+                                                            : 'hover:bg-slate-700 text-slate-400 hover:text-white'
+                                                        }`}
+                                                    title="Copy Snippet"
+                                                >
+                                                    {copiedSnippet === 'strings' ? (
+                                                        <>
+                                                            <Check size={12} />
+                                                            <span className="text-[10px] font-bold">Copied!</span>
+                                                        </>
+                                                    ) : (
+                                                        <Copy size={12} />
+                                                    )}
+                                                </button>
+                                            </div>
+                                            <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-green-300 overflow-x-auto">
+                                                {`files.forEach(f => {
+  const lines = f.content.split('\\n');
+  console.log("Reading " + f.name + ": " + lines.length + " lines");
+});`}
+                                            </pre>
+                                        </div>
+                                    ) : (
+                                        <div className="mb-4">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="text-xs font-bold text-indigo-300 uppercase">General Iteration</div>
+                                                <button
+                                                    onClick={() => handleCopySnippet('general', `files.forEach(file => {
+  console.log("Processing " + file.name);
+});`)}
+                                                    className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'general'
+                                                            ? 'bg-green-500/20 text-green-400'
+                                                            : 'hover:bg-slate-700 text-slate-400 hover:text-white'
+                                                        }`}
+                                                    title="Copy Snippet"
+                                                >
+                                                    {copiedSnippet === 'general' ? (
+                                                        <>
+                                                            <Check size={12} />
+                                                            <span className="text-[10px] font-bold">Copied!</span>
+                                                        </>
+                                                    ) : (
+                                                        <Copy size={12} />
+                                                    )}
+                                                </button>
+                                            </div>
+                                            <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-green-300 overflow-x-auto">
+                                                {`files.forEach(file => {
+  console.log("Processing " + file.name);
+});`}
+                                            </pre>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
