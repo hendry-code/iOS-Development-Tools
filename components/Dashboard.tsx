@@ -240,9 +240,11 @@ export function Dashboard({ setView }: DashboardProps) {
 
     useEffect(() => {
         if (shouldAnimate) {
+            // Mark as visited immediately to ensure we don't animate again if user navigates away quickly
+            sessionStorage.setItem('dashboard_visited', 'true');
+
             // Wait for all staggered animations to complete (10 items * 0.1s + ~0.5s duration + buffer)
             const timer = setTimeout(() => {
-                sessionStorage.setItem('dashboard_visited', 'true');
                 setShouldAnimate(false);
             }, 2500);
             return () => clearTimeout(timer);
