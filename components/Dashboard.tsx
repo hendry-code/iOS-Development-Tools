@@ -55,7 +55,7 @@ interface SortableTileProps {
 }
 
 // Separate component for the sortable item
-function SortableTile({ tool, setView, shouldAnimate, index, forceDragging }: SortableTileProps) {
+const SortableTile: React.FC<SortableTileProps> = ({ tool, setView, shouldAnimate, index, forceDragging }) => {
     const {
         attributes,
         listeners,
@@ -298,7 +298,7 @@ export function Dashboard({ setView }: DashboardProps) {
                 const oldIndex = items.findIndex((t) => t.id === active.id);
                 const newIndex = items.findIndex((t) => t.id === over.id);
 
-                const newItems = arrayMove(items, oldIndex, newIndex);
+                const newItems = arrayMove(items, oldIndex, newIndex) as Tool[];
 
                 // Persist new order
                 localStorage.setItem('dashboard_tile_order', JSON.stringify(newItems.map(t => t.id)));
