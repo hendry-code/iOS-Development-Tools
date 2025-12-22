@@ -11,7 +11,8 @@ import {
     Braces,
     ScanSearch,
     GripVertical,
-    Code
+    Code,
+    Copy
 } from 'lucide-react';
 import {
     DndContext,
@@ -220,6 +221,13 @@ const initialTools: Tool[] = [
         description: 'Convert JSON to Swift Codable structs',
         icon: Code,
         color: 'bg-orange-500',
+    },
+    {
+        id: 'duplicate-finder',
+        title: 'Duplicate Value Finder',
+        description: 'Find duplicate values across files',
+        icon: Copy,
+        color: 'bg-teal-600',
     },
 ];
 
