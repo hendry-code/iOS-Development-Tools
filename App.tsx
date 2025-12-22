@@ -17,6 +17,7 @@ import { JsonFormatterView } from './components/JsonFormatterView';
 import { XmlConverterView } from './components/XmlConverterView';
 import { JsonToSwiftView } from './components/JsonToSwiftView';
 import { DuplicateFinderView } from './components/DuplicateFinderView';
+import { ScriptRunnerView } from './components/ScriptRunnerView';
 
 
 import { ThemeProvider } from './src/context/ThemeContext';
@@ -52,6 +53,8 @@ function App() {
         return <JsonToSwiftView onBack={() => setView('dashboard')} />;
       case 'duplicate-finder':
         return <DuplicateFinderView onBack={() => setView('dashboard')} />;
+      case 'script-runner':
+        return <ScriptRunnerView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;

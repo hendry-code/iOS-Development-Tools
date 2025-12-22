@@ -12,7 +12,8 @@ import {
     ScanSearch,
     GripVertical,
     Code,
-    Copy
+    Copy,
+    Terminal
 } from 'lucide-react';
 import {
     DndContext,
@@ -228,6 +229,13 @@ const initialTools: Tool[] = [
         description: 'Find duplicate values across files',
         icon: Copy,
         color: 'bg-teal-600',
+    },
+    {
+        id: 'script-runner',
+        title: 'Script Runner',
+        description: 'Run JS scripts on text/files',
+        icon: Terminal,
+        color: 'bg-rose-500',
     },
 ];
 
