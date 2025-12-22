@@ -15,6 +15,7 @@ import { StringsAnalyserView } from './components/StringsAnalyserView';
 import { JsonConverterView } from './components/JsonConverterView';
 import { JsonFormatterView } from './components/JsonFormatterView';
 import { XmlConverterView } from './components/XmlConverterView';
+import { JsonToSwiftView } from './components/JsonToSwiftView';
 
 
 import { ThemeProvider } from './src/context/ThemeContext';
@@ -46,6 +47,8 @@ function App() {
         return <XmlConverterView onBack={() => setView('dashboard')} />;
       case 'json-formatter':
         return <JsonFormatterView onBack={() => setView('dashboard')} />;
+      case 'json-to-swift':
+        return <JsonToSwiftView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;

@@ -10,7 +10,8 @@ import {
     ArrowRight,
     Braces,
     ScanSearch,
-    GripVertical
+    GripVertical,
+    Code
 } from 'lucide-react';
 import {
     DndContext,
@@ -212,6 +213,13 @@ const initialTools: Tool[] = [
         description: 'Format, validate, and convert JSON data',
         icon: Braces,
         color: 'bg-yellow-500',
+    },
+    {
+        id: 'json-to-swift',
+        title: 'JSON to Swift',
+        description: 'Convert JSON to Swift Codable structs',
+        icon: Code,
+        color: 'bg-orange-500',
     },
 ];
 
