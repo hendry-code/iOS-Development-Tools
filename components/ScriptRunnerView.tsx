@@ -17,6 +17,12 @@ interface ScriptFile {
     type: string;
 }
 
+declare global {
+    interface Window {
+        loadPyodide: (config: { indexURL: string }) => Promise<any>;
+    }
+}
+
 export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) => {
     const [files, setFiles] = useState<ScriptFile[]>([]);
     const [script, setScript] = useState<string>('');
@@ -24,6 +30,9 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
     const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
     const [showHelp, setShowHelp] = useState(false);
     const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
+    const [language, setLanguage] = useState<'javascript' | 'python'>('javascript');
+    const [isPyodideLoading, setIsPyodideLoading] = useState(false);
+    const [pyodide, setPyodide] = useState<any>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scriptInputRef = useRef<HTMLInputElement>(null);
@@ -42,36 +51,114 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
         setTimeout(() => setCopiedSnippet(null), 2000);
     };
 
-    const handleRun = () => {
+    const loadPyodideRuntime = async () => {
+        if (pyodide) return pyodide;
+
+        setIsPyodideLoading(true);
+        try {
+            if (!window.loadPyodide) {
+                const script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/pyodide.js';
+                document.body.appendChild(script);
+                await new Promise((resolve, reject) => {
+                    script.onload = resolve;
+                    script.onerror = reject;
+                });
+            }
+
+            const py = await window.loadPyodide({
+                indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.25.0/full/'
+            });
+            setPyodide(py);
+            return py;
+        } catch (err: any) {
+            console.error('Failed to load Pyodide:', err);
+            setConsoleOutput(prev => [...prev, `[SYSTEM ERROR] Failed to load Python environment: ${err.message}`]);
+            throw err;
+        } finally {
+            setIsPyodideLoading(false);
+        }
+    };
+
+    const handleRun = async () => {
         setConsoleOutput([]);
         setOutput('');
 
-        try {
-            const logs: string[] = [];
-            const safeConsole = {
-                log: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
-                info: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
-                warn: (...args: any[]) => logs.push("[WARN] " + args.map(a => String(a)).join(' ')),
-                error: (...args: any[]) => logs.push("[ERROR] " + args.map(a => String(a)).join(' ')),
-            };
+        if (language === 'javascript') {
+            try {
+                const logs: string[] = [];
+                const safeConsole = {
+                    log: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
+                    info: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
+                    warn: (...args: any[]) => logs.push("[WARN] " + args.map(a => String(a)).join(' ')),
+                    error: (...args: any[]) => logs.push("[ERROR] " + args.map(a => String(a)).join(' ')),
+                };
 
-            const runScript = new Function('files', 'console', script);
-            const result = runScript(files, safeConsole);
+                const runScript = new Function('files', 'console', script);
+                const result = runScript(files, safeConsole);
 
-            setConsoleOutput(logs);
+                setConsoleOutput(logs);
 
-            if (result !== undefined) {
-                if (typeof result === 'object') {
-                    setOutput(JSON.stringify(result, null, 2));
+                if (result !== undefined) {
+                    if (typeof result === 'object') {
+                        setOutput(JSON.stringify(result, null, 2));
+                    } else {
+                        setOutput(String(result));
+                    }
                 } else {
-                    setOutput(String(result));
+                    setOutput('Script executed successfully (no return value)');
                 }
-            } else {
-                setOutput('Script executed successfully (no return value)');
-            }
 
-        } catch (err: any) {
-            setConsoleOutput(prev => [...prev, `[EXECUTION ERROR]: ${err.message}`]);
+            } catch (err: any) {
+                setConsoleOutput(prev => [...prev, `[EXECUTION ERROR]: ${err.message}`]);
+            }
+        } else {
+            // Python execution
+            try {
+                const py = await loadPyodideRuntime();
+
+                // Redirect Python stdout to our console
+                py.setStdout({
+                    batched: (msg: string) => {
+                        setConsoleOutput(prev => [...prev, msg]);
+                    }
+                });
+
+                // Convert files to Python-friendly structure
+                const filesData = files.map(f => ({
+                    name: f.name,
+                    content: f.content,
+                    size: f.size,
+                    type: f.type
+                }));
+
+                // Make files available in Python global scope
+                py.globals.set("files_js", filesData);
+
+                // Bootstrap script to convert js proxy to python list of dicts
+                await py.runPythonAsync(`
+import js
+files = []
+for f in js.files_js:
+    files.append({
+        "name": f.name,
+        "content": f.content,
+        "size": f.size,
+        "type": f.type
+    })
+`);
+
+                const result = await py.runPythonAsync(script);
+
+                if (result !== undefined) {
+                    setOutput(String(result));
+                } else {
+                    setOutput('Script executed successfully (no return value)');
+                }
+
+            } catch (err: any) {
+                setConsoleOutput(prev => [...prev, `[PYTHON ERROR]: ${err.message}`]);
+            }
         }
     };
 
@@ -179,7 +266,15 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
             <div className="flex items-center justify-between px-4 py-2 bg-slate-800 border-b border-slate-700">
                 <div className="flex items-center gap-2 text-slate-300">
                     <Code2 className="text-yellow-400" size={16} />
-                    <span className="text-sm font-semibold">Script (JS)</span>
+                    <span className="text-sm font-semibold">Script</span>
+                    <select
+                        value={language}
+                        onChange={(e) => setLanguage(e.target.value as 'javascript' | 'python')}
+                        className="ml-2 bg-slate-900 border border-slate-700 text-xs rounded px-2 py-1 outline-none focus:border-indigo-500"
+                    >
+                        <option value="javascript">JavaScript</option>
+                        <option value="python">Python</option>
+                    </select>
                 </div>
                 <div className="flex items-center gap-2">
                     <button
@@ -242,94 +337,133 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
                                     </ul>
                                 </div>
 
-                                <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
-                                    <h3 className="font-bold text-white mb-2">Code Snippets</h3>
+                            </div>
 
-                                    {files.length > 0 && files[0].type === 'json' ? (
-                                        <div className="mb-4">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <div className="text-xs font-bold text-indigo-300 uppercase">JSON Processing</div>
-                                                <button
-                                                    onClick={() => handleCopySnippet('json', `files.forEach(f => {
+                            <div className="bg-slate-800 p-4 rounded-xl border border-slate-700">
+                                <h3 className="font-bold text-white mb-2">Code Snippets ({language === 'javascript' ? 'JavaScript' : 'Python'})</h3>
+
+                                {language === 'javascript' ? (
+                                    // JavaScript Snippets
+                                    <>
+                                        {files.length > 0 && files[0].type === 'json' ? (
+                                            <div className="mb-4">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <div className="text-xs font-bold text-indigo-300 uppercase">JSON Processing</div>
+                                                    <button
+                                                        onClick={() => handleCopySnippet('json', `files.forEach(f => {
   if (f.type === 'json') {
     const data = JSON.parse(f.content);
     console.log("Parsed " + f.name);
     // ... work with data
   }
 });`)}
-                                                    className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'json'
+                                                        className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'json'
                                                             ? 'bg-green-500/20 text-green-400'
                                                             : 'hover:bg-slate-700 text-slate-400 hover:text-white'
-                                                        }`}
-                                                    title="Copy Snippet"
-                                                >
-                                                    {copiedSnippet === 'json' ? (
-                                                        <>
-                                                            <Check size={12} />
-                                                            <span className="text-[10px] font-bold">Copied!</span>
-                                                        </>
-                                                    ) : (
-                                                        <Copy size={12} />
-                                                    )}
-                                                </button>
-                                            </div>
-                                            <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-green-300 overflow-x-auto">
-                                                {`files.forEach(f => {
+                                                            }`}
+                                                        title="Copy Snippet"
+                                                    >
+                                                        {copiedSnippet === 'json' ? (
+                                                            <>
+                                                                <Check size={12} />
+                                                                <span className="text-[10px] font-bold">Copied!</span>
+                                                            </>
+                                                        ) : (
+                                                            <Copy size={12} />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-green-300 overflow-x-auto">
+                                                    {`files.forEach(f => {
   if (f.type === 'json') {
     const data = JSON.parse(f.content);
     console.log("Parsed " + f.name);
     // ... work with data
   }
 });`}
-                                            </pre>
-                                        </div>
-                                    ) : files.length > 0 && (files[0].type === 'strings' || files[0].type === 'xcstrings') ? (
-                                        <div className="mb-4">
-                                            <div className="flex items-center justify-between mb-1">
-                                                <div className="text-xs font-bold text-indigo-300 uppercase">Strings Parsing</div>
-                                                <button
-                                                    onClick={() => handleCopySnippet('strings', `files.forEach(f => {
+                                                </pre>
+                                            </div>
+                                        ) : files.length > 0 && (files[0].type === 'strings' || files[0].type === 'xcstrings') ? (
+                                            <div className="mb-4">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <div className="text-xs font-bold text-indigo-300 uppercase">Strings Parsing</div>
+                                                    <button
+                                                        onClick={() => handleCopySnippet('strings', `files.forEach(f => {
   const lines = f.content.split('\\n');
   console.log("Reading " + f.name + ": " + lines.length + " lines");
 });`)}
-                                                    className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'strings'
+                                                        className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'strings'
                                                             ? 'bg-green-500/20 text-green-400'
                                                             : 'hover:bg-slate-700 text-slate-400 hover:text-white'
-                                                        }`}
-                                                    title="Copy Snippet"
-                                                >
-                                                    {copiedSnippet === 'strings' ? (
-                                                        <>
-                                                            <Check size={12} />
-                                                            <span className="text-[10px] font-bold">Copied!</span>
-                                                        </>
-                                                    ) : (
-                                                        <Copy size={12} />
-                                                    )}
-                                                </button>
-                                            </div>
-                                            <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-green-300 overflow-x-auto">
-                                                {`files.forEach(f => {
+                                                            }`}
+                                                        title="Copy Snippet"
+                                                    >
+                                                        {copiedSnippet === 'strings' ? (
+                                                            <>
+                                                                <Check size={12} />
+                                                                <span className="text-[10px] font-bold">Copied!</span>
+                                                            </>
+                                                        ) : (
+                                                            <Copy size={12} />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-green-300 overflow-x-auto">
+                                                    {`files.forEach(f => {
   const lines = f.content.split('\\n');
   console.log("Reading " + f.name + ": " + lines.length + " lines");
 });`}
-                                            </pre>
-                                        </div>
-                                    ) : (
+                                                </pre>
+                                            </div>
+                                        ) : (
+                                            <div className="mb-4">
+                                                <div className="flex items-center justify-between mb-1">
+                                                    <div className="text-xs font-bold text-indigo-300 uppercase">General Iteration</div>
+                                                    <button
+                                                        onClick={() => handleCopySnippet('general', `files.forEach(file => {
+  console.log("Processing " + file.name);
+});`)}
+                                                        className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'general'
+                                                            ? 'bg-green-500/20 text-green-400'
+                                                            : 'hover:bg-slate-700 text-slate-400 hover:text-white'
+                                                            }`}
+                                                        title="Copy Snippet"
+                                                    >
+                                                        {copiedSnippet === 'general' ? (
+                                                            <>
+                                                                <Check size={12} />
+                                                                <span className="text-[10px] font-bold">Copied!</span>
+                                                            </>
+                                                        ) : (
+                                                            <Copy size={12} />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-green-300 overflow-x-auto">
+                                                    {`files.forEach(file => {
+  console.log("Processing " + file.name);
+});`}
+                                                </pre>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    // Python Snippets
+                                    <>
                                         <div className="mb-4">
                                             <div className="flex items-center justify-between mb-1">
                                                 <div className="text-xs font-bold text-indigo-300 uppercase">General Iteration</div>
                                                 <button
-                                                    onClick={() => handleCopySnippet('general', `files.forEach(file => {
-  console.log("Processing " + file.name);
-});`)}
-                                                    className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'general'
-                                                            ? 'bg-green-500/20 text-green-400'
-                                                            : 'hover:bg-slate-700 text-slate-400 hover:text-white'
+                                                    onClick={() => handleCopySnippet('py_general', `for file in files:
+    print(f"Processing {file['name']} ({file['size']} bytes)")
+`)}
+                                                    className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'py_general'
+                                                        ? 'bg-green-500/20 text-green-400'
+                                                        : 'hover:bg-slate-700 text-slate-400 hover:text-white'
                                                         }`}
                                                     title="Copy Snippet"
                                                 >
-                                                    {copiedSnippet === 'general' ? (
+                                                    {copiedSnippet === 'py_general' ? (
                                                         <>
                                                             <Check size={12} />
                                                             <span className="text-[10px] font-bold">Copied!</span>
@@ -340,20 +474,56 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
                                                 </button>
                                             </div>
                                             <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-green-300 overflow-x-auto">
-                                                {`files.forEach(file => {
-  console.log("Processing " + file.name);
-});`}
+                                                {`for file in files:
+    print(f"Processing {file['name']} ({file['size']} bytes)")`}
                                             </pre>
                                         </div>
-                                    )}
-                                </div>
+
+                                        <div className="mb-4">
+                                            <div className="flex items-center justify-between mb-1">
+                                                <div className="text-xs font-bold text-indigo-300 uppercase">JSON Processing</div>
+                                                <button
+                                                    onClick={() => handleCopySnippet('py_json', `import json
+
+for f in files:
+    if f['type'] == 'json':
+        data = json.loads(f['content'])
+        print(f"Parsed {f['name']} keys: {list(data.keys())}")`)}
+                                                    className={`p-1 rounded flex items-center gap-1.5 transition-all ${copiedSnippet === 'py_json'
+                                                        ? 'bg-green-500/20 text-green-400'
+                                                        : 'hover:bg-slate-700 text-slate-400 hover:text-white'
+                                                        }`}
+                                                    title="Copy Snippet"
+                                                >
+                                                    {copiedSnippet === 'py_json' ? (
+                                                        <>
+                                                            <Check size={12} />
+                                                            <span className="text-[10px] font-bold">Copied!</span>
+                                                        </>
+                                                    ) : (
+                                                        <Copy size={12} />
+                                                    )}
+                                                </button>
+                                            </div>
+                                            <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-green-300 overflow-x-auto">
+                                                {`import json
+
+for f in files:
+    if f['type'] == 'json':
+        data = json.loads(f['content'])
+        print(f"Parsed {f['name']} keys: {list(data.keys())}")`}
+                                            </pre>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
                 )}
                 <Editor
                     height="100%"
-                    defaultLanguage="javascript"
+                    defaultLanguage={language}
+                    language={language}
                     theme="vs-dark"
                     value={script}
                     onChange={(value) => setScript(value || '')}
