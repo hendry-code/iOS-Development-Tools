@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, Copy, Upload, X, Trash2, Search, FileText } from 'lucide-react';
+import { ArrowLeft, Copy, Upload, X, Trash2, Search, FileText, Check } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 import { LanguageFile } from '../types';
 import { findDuplicates, DuplicateResult } from '../services/duplicateFinder';
@@ -8,6 +8,27 @@ import { findDuplicates, DuplicateResult } from '../services/duplicateFinder';
 interface DuplicateFinderViewProps {
     onBack: () => void;
 }
+
+const CopyButton = ({ text, className = "" }: { text: string, className?: string }) => {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(text);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <button
+            onClick={handleCopy}
+            className={`p-1 hover:bg-slate-700 rounded transition-all focus:outline-none focus:ring-2 focus:ring-teal-500/50 ${copied ? 'text-teal-400' : 'text-slate-500 hover:text-white'} ${className}`}
+            title="Copy key"
+        >
+            {copied ? <Check size={14} /> : <Copy size={14} />}
+        </button>
+    );
+};
 
 const guessLangCode = (fileName: string): string => {
     const name = fileName.toLowerCase().replace(/\.(strings|stringsdict|xcstrings|xml|json)$/, '');
@@ -179,6 +200,7 @@ export const DuplicateFinderView: React.FC<DuplicateFinderViewProps> = ({ onBack
                                 <h3 className="text-xl font-bold text-white flex items-center">
                                     <Copy size={24} className="text-teal-400 mr-2" />
                                     Found Duplicates ({duplicates.length})
+
                                 </h3>
                             </div>
 
@@ -203,11 +225,12 @@ export const DuplicateFinderView: React.FC<DuplicateFinderViewProps> = ({ onBack
 
                                             <div className="pl-4 border-l-2 border-indigo-500/30 space-y-2 mt-2">
                                                 {dup.locations.map((loc, i) => (
-                                                    <div key={i} className="flex items-center text-xs text-slate-400 font-mono bg-slate-800/50 p-2 rounded justify-between hover:bg-slate-800/80">
-                                                        <div className="flex items-center overflow-hidden mr-2">
+                                                    <div key={i} className="flex items-center text-xs text-slate-400 font-mono bg-slate-800/50 p-2 rounded justify-between hover:bg-slate-800/80 group/item">
+                                                        <div className="flex items-center overflow-hidden mr-2 flex-1">
                                                             <span className="text-indigo-400 font-semibold mr-2 flex-shrink-0">{loc.fileName}</span>
                                                             <span className="text-slate-500 mr-2 flex-shrink-0">→</span>
-                                                            <span className="text-slate-300 truncate" title={loc.key}>{loc.key}</span>
+                                                            <span className="text-slate-300 truncate mr-2" title={loc.key}>{loc.key}</span>
+                                                            <CopyButton text={loc.key} className="opacity-0 group-hover/item:opacity-100 transition-opacity" />
                                                         </div>
                                                         {loc.language && (
                                                             <span className="bg-slate-700 text-slate-300 px-1.5 py-0.5 rounded text-[10px] uppercase font-bold tracking-wider ml-auto flex-shrink-0">
