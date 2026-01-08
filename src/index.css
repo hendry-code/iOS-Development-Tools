@@ -76,7 +76,7 @@
 }
 
 .animate-window-open {
-  animation: windowOpen 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: windowOpen 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 
@@ -99,5 +99,5 @@
 }
 
 .animate-slide-up-fade {
-  animation: slideUpFade 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

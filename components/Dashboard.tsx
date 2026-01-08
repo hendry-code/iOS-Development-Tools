@@ -83,7 +83,7 @@ const SortableTile: React.FC<SortableTileProps> = ({ tool, onTileClick, shouldAn
     return (
         <button
             ref={setNodeRef}
-            style={{ ...style, ...(shouldAnimate ? { animationDelay: `${index * 0.1}s` } : {}) }}
+            style={{ ...style, ...(shouldAnimate ? { animationDelay: `${index * 0.05}s` } : {}) }}
             {...attributes}
             {...listeners}
             onClick={(e) => {
