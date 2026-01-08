@@ -29,18 +29,23 @@ export const MockDataGeneratorView: React.FC<MockDataGeneratorViewProps> = ({ on
     const [output, setOutput] = useState<string>('');
     const [isGenerating, setIsGenerating] = useState(false);
 
-    // Initial generation
+    // Initial generation & reactive updates
     useEffect(() => {
-        handleGenerate();
-    }, []);
+        const timer = setTimeout(() => {
+            handleGenerate();
+        }, 500); // Debounce for 500ms
+
+        return () => clearTimeout(timer);
+    }, [fields, count, format]);
 
     const handleGenerate = () => {
         setIsGenerating(true);
+        // data generation is synchronous but we might want to defer it to next tick to not block UI
         setTimeout(() => {
             const data = generateMockData(fields, count, format);
             setOutput(data);
             setIsGenerating(false);
-        }, 50);
+        }, 0);
     };
 
     // --- Tree Helpers ---
@@ -155,14 +160,11 @@ export const MockDataGeneratorView: React.FC<MockDataGeneratorViewProps> = ({ on
                 </div>
 
                 <div className="flex items-center gap-3">
-                    <button
-                        onClick={handleGenerate}
-                        disabled={isGenerating}
-                        className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition-all active:scale-95 shadow-lg shadow-emerald-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
-                        Generate Data
-                    </button>
+                    {/* Removed Generate Button for functionality "Instantly Reflected" */}
+                    <div className={`text-xs font-medium text-emerald-400 flex items-center gap-2 transition-opacity duration-300 ${isGenerating ? 'opacity-100' : 'opacity-0'}`}>
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        Generating...
+                    </div>
                 </div>
             </header>
 
