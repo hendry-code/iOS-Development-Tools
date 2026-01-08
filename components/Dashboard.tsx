@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ViewMode } from '../types';
 import {
     FileCode2,
@@ -49,14 +49,15 @@ interface Tool {
 
 interface SortableTileProps {
     tool: Tool;
-    setView: (view: ViewMode) => void;
+    onTileClick: (id: string, rect: DOMRect) => void;
     shouldAnimate: boolean;
     index: number;
     forceDragging?: boolean;
+    isHidden?: boolean;
 }
 
 // Separate component for the sortable item
-const SortableTile: React.FC<SortableTileProps> = ({ tool, setView, shouldAnimate, index, forceDragging }) => {
+const SortableTile: React.FC<SortableTileProps> = ({ tool, onTileClick, shouldAnimate, index, forceDragging, isHidden }) => {
     const {
         attributes,
         listeners,
@@ -70,7 +71,7 @@ const SortableTile: React.FC<SortableTileProps> = ({ tool, setView, shouldAnimat
         transform: CSS.Transform.toString(transform),
         transition,
         zIndex: isDragging ? 50 : 'auto',
-        opacity: isDragging ? 0.3 : 1, // Dim the original item while dragging
+        opacity: isDragging || isHidden ? 0 : 1, // Hide if dragging or if it's the expanding tile
     };
 
     const Icon = tool.icon;
@@ -81,15 +82,13 @@ const SortableTile: React.FC<SortableTileProps> = ({ tool, setView, shouldAnimat
     return (
         <button
             ref={setNodeRef}
-            style={{ ...style, ... (shouldAnimate ? { animationDelay: `${index * 0.1}s` } : {}) }}
+            style={{ ...style, ...(shouldAnimate ? { animationDelay: `${index * 0.1}s` } : {}) }}
             {...attributes}
             {...listeners}
-            onClick={() => {
-                // If we are dragging, don't trigger click. 
-                // dnd-kit handles this well usually, but explicit separating might be needed 
-                // if we were separating drag handle. With whole card draggable, it's fine.
+            onClick={(e) => {
                 if (!activeDragging) {
-                    setView(tool.id as ViewMode)
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    onTileClick(tool.id, rect);
                 }
             }}
             className={`group relative p-3 rounded-2xl bg-slate-800/40 border border-slate-700 hover:bg-slate-800/60 transition-all duration-300 text-left hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/10 backdrop-blur-sm ${shouldAnimate ? 'animate-slide-up-fade' : ''} ${activeDragging ? 'shadow-2xl ring-2 ring-indigo-500 scale-105 bg-slate-800' : ''}`}
@@ -141,6 +140,67 @@ function DragOverlayTile({ tool }: { tool: Tool }) {
             <div className="flex items-center text-[10px] font-medium text-slate-500">
                 Open Tool <ArrowRight size={10} className="ml-1" />
             </div>
+        </div>
+    );
+}
+
+// Component for the expanding animation
+function ExpandingTileOverlay({ tool, initialRect }: { tool: Tool; initialRect: DOMRect }) {
+    const Icon = tool.icon;
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    useEffect(() => {
+        // Trigger expansion next frame
+        requestAnimationFrame(() => {
+            setIsExpanded(true);
+        });
+    }, []);
+
+    const style: React.CSSProperties = isExpanded
+        ? {
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            borderRadius: 0, // '0px'
+            opacity: 0, // Fade out the tile content itself as the new view fades in? Or keep it opaque?
+            // The requirement says: "tile's border line should expands and while expanding the dashboard page should fade out and the detailed view of the selected tile should be fade in."
+            // This implies the tile ITSELF might not need to be fully opaque if the detail view is fading in. 
+            // However, usually "border expansion" means the container grows.
+            // Let's try expanding the container to full screen with a background that matches the app background, 
+            // then fading it out or letting the new view cover it.
+            // But if we want to see the border expand, we need the border to remain visible.
+            // The detail view will mount on top.
+            position: 'fixed',
+            zIndex: 9999,
+        }
+        : {
+            top: initialRect.top,
+            left: initialRect.left,
+            width: initialRect.width,
+            height: initialRect.height,
+            borderRadius: '1rem', // 16px matching rounded-2xl
+            position: 'fixed',
+            zIndex: 9999,
+        };
+
+    return (
+        <div
+            className={`fixed bg-slate-800/40 backdrop-blur-sm border border-slate-700 transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'border-indigo-500/0' : 'border-slate-700'}`}
+            style={style}
+        >
+            {/* We can keep the inner content fading out as it expands if desired, or keep it fixed. 
+                 For a smooth transition to a "page", typically the tile content fades out as it expands.
+             */}
+            <div className={`p-3 w-full h-full transition-opacity duration-300 ${isExpanded ? 'opacity-0' : 'opacity-100'}`}>
+                <div className={`w-10 h-10 rounded-lg ${tool.color} bg-opacity-20 flex items-center justify-center mb-3 shadow-lg ring-1 ring-white/10`}>
+                    <Icon className="text-white" size={20} />
+                </div>
+                <h3 className="text-base font-semibold text-slate-100 mb-1">
+                    {tool.title}
+                </h3>
+            </div>
+            {/* Border expansion visual - maybe the border itself handles it via the container div */}
         </div>
     );
 }
@@ -246,6 +306,10 @@ export function Dashboard({ setView }: DashboardProps) {
 
     const [activeId, setActiveId] = useState<string | null>(null);
 
+    // Animation state
+    const [expandingId, setExpandingId] = useState<string | null>(null);
+    const [expansionRect, setExpansionRect] = useState<DOMRect | null>(null);
+
     useEffect(() => {
         if (shouldAnimate) {
             // Mark as visited immediately to ensure we don't animate again if user navigates away quickly
@@ -319,8 +383,19 @@ export function Dashboard({ setView }: DashboardProps) {
         setActiveId(null);
     }
 
+    const handleTileClick = (id: string, rect: DOMRect) => {
+        setExpansionRect(rect);
+        setExpandingId(id);
+
+        // Wait for expansion animation to cover the screen before switching view
+        // Animation duration set to 500ms in ExpandingTileOverlay
+        setTimeout(() => {
+            setView(id as ViewMode);
+        }, 500);
+    };
+
     return (
-        <div className="w-full min-h-screen p-4 md:p-8 flex flex-col items-center justify-center animate-window-open bg-slate-900 text-slate-100 font-sans">
+        <div className={`w-full min-h-screen p-4 md:p-8 flex flex-col items-center justify-center bg-slate-900 text-slate-100 font-sans transition-opacity duration-500 ${expandingId ? 'opacity-0' : ''}`}>
             <header className="text-center mb-16">
                 <h1 className="text-5xl sm:text-7xl font-extrabold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight mb-6 drop-shadow-2xl">
                     Development Tools
@@ -345,9 +420,11 @@ export function Dashboard({ setView }: DashboardProps) {
                             <SortableTile
                                 key={tool.id}
                                 tool={tool}
-                                setView={setView}
+                                onTileClick={handleTileClick}
+                                setView={setView} // Kept for compatibility but unused in SortableTile now
                                 shouldAnimate={shouldAnimate}
                                 index={index}
+                                isHidden={expandingId === tool.id}
                             />
                         ))}
                     </SortableContext>
@@ -358,6 +435,16 @@ export function Dashboard({ setView }: DashboardProps) {
                     ) : null}
                 </DragOverlay>
             </DndContext>
+
+            {expandingId && expansionRect && (
+                <ExpandingTileOverlay
+                    tool={tools.find(t => t.id === expandingId)!}
+                    initialRect={expansionRect}
+                />
+            )}
         </div>
     );
 }
+
+// Helper for type compatibility if needed, though handleTileClick replaces direct setView
+

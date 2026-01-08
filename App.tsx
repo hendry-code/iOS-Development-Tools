@@ -64,7 +64,9 @@ function App() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
       <div className="min-h-screen w-full bg-slate-50 dark:bg-transparent text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-500/30 dark:selection:bg-red-500/30 overflow-x-hidden transition-colors duration-300 flex flex-col">
-        {renderView()}
+        <div key={view} className="animate-window-open flex-1 w-full flex flex-col">
+          {renderView()}
+        </div>
       </div>
     </ThemeProvider>
   );
