@@ -18,6 +18,7 @@ import { XmlConverterView } from './components/XmlConverterView';
 import { JsonToSwiftView } from './components/JsonToSwiftView';
 import { DuplicateFinderView } from './components/DuplicateFinderView';
 import { ScriptRunnerView } from './components/ScriptRunnerView';
+import { MockDataGeneratorView } from './components/MockDataGeneratorView';
 
 
 import { ThemeProvider } from './src/context/ThemeContext';
@@ -55,6 +56,8 @@ function App() {
         return <DuplicateFinderView onBack={() => setView('dashboard')} />;
       case 'script-runner':
         return <ScriptRunnerView onBack={() => setView('dashboard')} />;
+      case 'mock-data':
+        return <MockDataGeneratorView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;

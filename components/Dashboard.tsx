@@ -13,7 +13,8 @@ import {
     GripVertical,
     Code,
     Copy,
-    Terminal
+    Terminal,
+    Database
 } from 'lucide-react';
 import {
     DndContext,
@@ -296,6 +297,13 @@ const initialTools: Tool[] = [
         description: 'Run JS scripts on text/files',
         icon: Terminal,
         color: 'bg-rose-500',
+    },
+    {
+        id: 'mock-data',
+        title: 'Mock Data Generator',
+        description: 'Generate realistic mock data (JSON/CSV)',
+        icon: Database,
+        color: 'bg-emerald-500',
     },
 ];
 
