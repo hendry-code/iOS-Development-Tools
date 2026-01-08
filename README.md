@@ -21,6 +21,9 @@ The application consists of several specialized modules accessible from a centra
 - **Strings Analyser**: detailed analysis of `.xcstrings`, `.xml`, and other formats. Checks for missing translations, duplicate keys, and provides word counts per language.
 - **File Editor**: Built-in editor to view and modify file contents directly within the app.
 
+### 🧪 Data Generation
+- **Mock Data Generator**: Create realistic, complex datasets for testing. Supports deeply nested objects, arrays, and 16+ data types (names, addresses, UUIDs, etc.). Export to JSON or CSV with instant preview.
+
 ### 🎨 User Interface
 - **Modern Dashboard**: Intuitive tile-based navigation.
 - **Dark/Light Mode**: Fully supported theming for comfortable usage in any environment.
