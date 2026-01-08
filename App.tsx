@@ -24,6 +24,8 @@ import { MockDataGeneratorView } from './components/MockDataGeneratorView';
 import { ThemeProvider } from './src/context/ThemeContext';
 import { ThemeToggle } from './components/ThemeToggle';
 
+import { AppIconGeneratorView } from './components/AppIconGeneratorView';
+
 function App() {
   const [view, setView] = useState<ViewMode>('dashboard');
 
@@ -58,6 +60,8 @@ function App() {
         return <ScriptRunnerView onBack={() => setView('dashboard')} />;
       case 'mock-data':
         return <MockDataGeneratorView onBack={() => setView('dashboard')} />;
+      case 'app-icon-generator':
+        return <AppIconGeneratorView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;

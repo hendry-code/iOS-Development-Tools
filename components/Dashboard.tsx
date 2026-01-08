@@ -14,7 +14,8 @@ import {
     Code,
     Copy,
     Terminal,
-    Database
+    Database,
+    Image as ImageIcon
 } from 'lucide-react';
 import {
     DndContext,
@@ -304,6 +305,13 @@ const initialTools: Tool[] = [
         description: 'Generate realistic mock data (JSON/CSV)',
         icon: Database,
         color: 'bg-emerald-500',
+    },
+    {
+        id: 'app-icon-generator',
+        title: 'App Icon Generator',
+        description: 'Generate standard iOS App Icons & Contents.json',
+        icon: ImageIcon,
+        color: 'bg-indigo-500',
     },
 ];
 
