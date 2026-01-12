@@ -93,26 +93,54 @@ const SortableTile: React.FC<SortableTileProps> = ({ tool, onTileClick, shouldAn
                     onTileClick(tool.id, rect);
                 }
             }}
-            className={`group relative p-3 rounded-2xl bg-slate-800/40 border border-slate-700 hover:bg-slate-800/60 transition-all duration-300 text-left hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/10 backdrop-blur-sm ${shouldAnimate ? 'animate-slide-up-fade' : ''} ${activeDragging ? 'shadow-2xl ring-2 ring-indigo-500 scale-105 bg-slate-800' : ''}`}
+            className={`
+                group relative flex flex-col p-5 h-full
+                rounded-3xl
+                bg-slate-800/40 border border-slate-700/50
+                hover:bg-slate-800/80 hover:border-slate-600/50
+                transition-all duration-300
+                text-left
+                hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50
+                backdrop-blur-sm
+                overflow-hidden
+                ${shouldAnimate ? 'animate-slide-up-fade' : ''}
+                ${activeDragging ? 'shadow-2xl ring-2 ring-indigo-500 scale-105 bg-slate-800 z-50' : ''}
+            `}
         >
-            <div className={`w-10 h-10 rounded-lg ${tool.color} bg-opacity-20 flex items-center justify-center mb-3 shadow-lg group-hover:shadow-xl transition-all ring-1 ring-white/10`}>
-                <Icon className="text-white" size={20} />
-            </div>
+            {/* Ambient Background Gradient on Hover */}
+            <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${tool.color}`} />
 
-            <div className="absolute top-3 right-3 text-slate-600 opacity-100 cursor-grab active:cursor-grabbing">
-                <GripVertical size={16} />
-            </div>
+            <div className="relative z-10 flex-1 flex flex-col">
+                <div className="flex justify-between items-start mb-4">
+                    <div className={`
+                        w-14 h-14 rounded-2xl
+                        bg-gradient-to-br ${tool.color}
+                        flex items-center justify-center
+                        shadow-lg shadow-black/20
+                        group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out
+                    `}>
+                        <Icon className="text-white drop-shadow-md" size={28} />
+                    </div>
 
-            <h3 className="text-base font-semibold text-slate-100 mb-1 group-hover:text-indigo-400 transition-colors">
-                {tool.title}
-            </h3>
+                    <div className="text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                        <GripVertical size={20} />
+                    </div>
+                </div>
 
-            <p className="text-xs text-slate-400 mb-3 line-clamp-2">
-                {tool.description}
-            </p>
+                <h3 className="text-lg font-bold text-slate-100 mb-2 group-hover:text-white transition-colors">
+                    {tool.title}
+                </h3>
 
-            <div className="flex items-center text-[10px] font-medium text-slate-500 group-hover:text-indigo-400 transition-colors">
-                Open Tool <ArrowRight size={10} className="ml-1 group-hover:translate-x-1 transition-transform" />
+                <p className="text-sm text-slate-400 leading-relaxed line-clamp-2 mb-4 group-hover:text-slate-300 transition-colors">
+                    {tool.description}
+                </p>
+
+                <div className="mt-auto flex items-center text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-indigo-400 transition-colors">
+                    <span className="mr-2">Open Tool</span>
+                    <div className="bg-slate-700/50 p-1 rounded-full group-hover:bg-indigo-500/20 transition-colors">
+                        <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                    </div>
+                </div>
             </div>
         </button>
     );
@@ -122,25 +150,48 @@ const SortableTile: React.FC<SortableTileProps> = ({ tool, onTileClick, shouldAn
 function DragOverlayTile({ tool }: { tool: Tool }) {
     const Icon = tool.icon;
     return (
-        <div className={`group relative p-3 rounded-2xl bg-slate-800 border border-slate-700 text-left shadow-2xl ring-2 ring-indigo-500 scale-105 cursor-grabbing`}>
-            <div className={`w-10 h-10 rounded-lg ${tool.color} bg-opacity-20 flex items-center justify-center mb-3 shadow-lg ring-1 ring-white/10`}>
-                <Icon className="text-white" size={20} />
-            </div>
+        <div className={`
+            group relative flex flex-col p-5 h-full
+            rounded-3xl
+            bg-slate-800 border border-indigo-500/50
+            shadow-2xl shadow-indigo-500/20
+            scale-105 cursor-grabbing
+            text-left
+            overflow-hidden
+        `}>
+            <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${tool.color}`} />
 
-            <div className="absolute top-3 right-3 text-slate-600 opacity-100 cursor-grabbing">
-                <GripVertical size={16} />
-            </div>
+            <div className="relative z-10 flex-1 flex flex-col">
+                <div className="flex justify-between items-start mb-4">
+                    <div className={`
+                        w-14 h-14 rounded-2xl
+                        bg-gradient-to-br ${tool.color}
+                        flex items-center justify-center
+                        shadow-lg shadow-black/20
+                        scale-110 rotate-3
+                    `}>
+                        <Icon className="text-white drop-shadow-md" size={28} />
+                    </div>
 
-            <h3 className="text-base font-semibold text-slate-100 mb-1">
-                {tool.title}
-            </h3>
+                    <div className="text-slate-500">
+                        <GripVertical size={20} />
+                    </div>
+                </div>
 
-            <p className="text-xs text-slate-400 mb-3 line-clamp-2">
-                {tool.description}
-            </p>
+                <h3 className="text-lg font-bold text-white mb-2">
+                    {tool.title}
+                </h3>
 
-            <div className="flex items-center text-[10px] font-medium text-slate-500">
-                Open Tool <ArrowRight size={10} className="ml-1" />
+                <p className="text-sm text-slate-300 leading-relaxed line-clamp-2 mb-4">
+                    {tool.description}
+                </p>
+
+                <div className="mt-auto flex items-center text-xs font-bold uppercase tracking-wider text-indigo-400">
+                    <span className="mr-2">Open Tool</span>
+                    <div className="bg-indigo-500/20 p-1 rounded-full">
+                        <ArrowRight size={12} />
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -164,15 +215,8 @@ function ExpandingTileOverlay({ tool, initialRect }: { tool: Tool; initialRect: 
             left: 0,
             width: '100vw',
             height: '100vh',
-            borderRadius: 0, // '0px'
-            opacity: 0, // Fade out the tile content itself as the new view fades in? Or keep it opaque?
-            // The requirement says: "tile's border line should expands and while expanding the dashboard page should fade out and the detailed view of the selected tile should be fade in."
-            // This implies the tile ITSELF might not need to be fully opaque if the detail view is fading in. 
-            // However, usually "border expansion" means the container grows.
-            // Let's try expanding the container to full screen with a background that matches the app background, 
-            // then fading it out or letting the new view cover it.
-            // But if we want to see the border expand, we need the border to remain visible.
-            // The detail view will mount on top.
+            borderRadius: 0,
+            opacity: 1, // Keep content visible for smooth transition
             position: 'fixed',
             zIndex: 9999,
         }
@@ -181,28 +225,36 @@ function ExpandingTileOverlay({ tool, initialRect }: { tool: Tool; initialRect: 
             left: initialRect.left,
             width: initialRect.width,
             height: initialRect.height,
-            borderRadius: '1rem', // 16px matching rounded-2xl
+            borderRadius: '1.5rem', // Matching rounded-3xl (24px)
             position: 'fixed',
             zIndex: 9999,
         };
 
     return (
         <div
-            className={`fixed bg-slate-800/40 backdrop-blur-sm border border-slate-700 transition-all duration-500 ease-in-out overflow-hidden ${isExpanded ? 'border-indigo-500/0' : 'border-slate-700'}`}
+            className={`fixed bg-slate-900 border transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden ${isExpanded ? 'border-transparent' : 'border-slate-700/50'}`}
             style={style}
         >
-            {/* We can keep the inner content fading out as it expands if desired, or keep it fixed. 
-                 For a smooth transition to a "page", typically the tile content fades out as it expands.
-             */}
-            <div className={`p-3 w-full h-full transition-opacity duration-300 ${isExpanded ? 'opacity-0' : 'opacity-100'}`}>
-                <div className={`w-10 h-10 rounded-lg ${tool.color} bg-opacity-20 flex items-center justify-center mb-3 shadow-lg ring-1 ring-white/10`}>
-                    <Icon className="text-white" size={20} />
+            {/* Background gradient that expands to fill screen */}
+            <div className={`absolute inset-0 bg-gradient-to-br ${tool.color} transition-opacity duration-500 ${isExpanded ? 'opacity-100' : 'opacity-10'}`}>
+                <div className={`absolute inset-0 bg-slate-900 ${isExpanded ? 'opacity-95' : 'opacity-0'} transition-opacity duration-500`} />
+            </div>
+
+            <div className={`relative w-full h-full p-5 flex flex-col transition-all duration-300 ${isExpanded ? 'opacity-0 scale-95' : 'opacity-100'}`}>
+                <div className="flex justify-between items-start mb-4">
+                    <div className={`
+                        w-14 h-14 rounded-2xl
+                        bg-gradient-to-br ${tool.color}
+                        flex items-center justify-center
+                        shadow-lg shadow-black/20
+                    `}>
+                        <Icon className="text-white drop-shadow-md" size={28} />
+                    </div>
                 </div>
-                <h3 className="text-base font-semibold text-slate-100 mb-1">
+                <h3 className="text-lg font-bold text-slate-100 mb-2">
                     {tool.title}
                 </h3>
             </div>
-            {/* Border expansion visual - maybe the border itself handles it via the container div */}
         </div>
     );
 }
@@ -213,28 +265,28 @@ const initialTools: Tool[] = [
         title: 'Combine Strings',
         description: 'Merge multiple .strings files into a single file',
         icon: FileCode2,
-        color: 'bg-blue-500',
+        color: 'from-blue-500 to-cyan-500',
     },
     {
         id: 'extract',
         title: 'Extract Catalog',
         description: 'Extract strings from .xcstrings catalog files',
         icon: BookOpen,
-        color: 'bg-purple-500',
+        color: 'from-purple-500 to-indigo-500',
     },
     {
         id: 'properties',
         title: 'Properties Converter',
         description: 'Convert .properties files to .strings format',
         icon: FileJson,
-        color: 'bg-green-500',
+        color: 'from-emerald-500 to-green-500',
     },
     {
         id: 'editor',
         title: 'File Editor',
         description: 'Edit and manage your localization files',
         icon: Edit3,
-        color: 'bg-orange-500',
+        color: 'from-orange-500 to-amber-500',
     },
     {
         id: 'renamer',
@@ -255,63 +307,63 @@ const initialTools: Tool[] = [
         title: 'Merge Strings',
         description: 'Smart merge with conflict resolution',
         icon: Merge,
-        color: 'bg-indigo-500',
+        color: 'from-indigo-500 to-violet-600',
     },
     {
         id: 'analyser',
         title: 'Strings Analyser',
         description: 'Deep analysis for .xcstrings and .xml files',
         icon: ScanSearch,
-        color: 'bg-indigo-600',
+        color: 'from-violet-600 to-indigo-600',
     },
     {
         id: 'xml-converter',
         title: 'XML Converter',
         description: 'Convert .strings, .stringsdict, .xcstrings to Android XML',
         icon: FileCode2,
-        color: 'bg-teal-500',
+        color: 'from-teal-400 to-emerald-500',
     },
     {
         id: 'json-formatter',
         title: 'JSON Beautifier',
         description: 'Format, validate, and convert JSON data',
         icon: Braces,
-        color: 'bg-yellow-500',
+        color: 'from-yellow-500 to-orange-500',
     },
     {
         id: 'json-to-swift',
         title: 'JSON to Swift',
         description: 'Convert JSON to Swift Codable structs',
         icon: Code,
-        color: 'bg-orange-500',
+        color: 'from-orange-500 to-red-500',
     },
     {
         id: 'duplicate-finder',
         title: 'Duplicate Value Finder',
         description: 'Find duplicate values across files',
         icon: Copy,
-        color: 'bg-teal-600',
+        color: 'from-teal-500 to-cyan-600',
     },
     {
         id: 'script-runner',
         title: 'Script Runner',
         description: 'Run JS scripts on text/files',
         icon: Terminal,
-        color: 'bg-rose-500',
+        color: 'from-rose-500 to-red-600',
     },
     {
         id: 'mock-data',
         title: 'Mock Data Generator',
         description: 'Generate realistic mock data (JSON/CSV)',
         icon: Database,
-        color: 'bg-emerald-500',
+        color: 'from-green-500 to-emerald-600',
     },
     {
         id: 'app-icon-generator',
         title: 'App Icon Generator',
         description: 'Generate standard iOS App Icons & Contents.json',
         icon: ImageIcon,
-        color: 'bg-indigo-500',
+        color: 'from-blue-600 to-indigo-600',
     },
 ];
 
