@@ -40,6 +40,8 @@ export const analyzeStrings = (files: LanguageFile[]): StringsAnalysisResult => 
             parseXCStrings(file.content, keysMap, languagesSet);
         } else if (file.name.endsWith('.xml')) {
             parseXML(file, keysMap, languagesSet);
+        } else if (file.name.endsWith('.xliff')) {
+            parseXLIFF(file, keysMap, languagesSet);
         }
     });
 
@@ -222,6 +224,86 @@ const parseXML = (file: LanguageFile, keysMap: Record<string, KeyAnalysis>, lang
                     keysMap[subKey] = { key: subKey, translations: {}, hasDuplicates: false };
                 }
                 keysMap[subKey].translations[lang] = { value, state: 'translated' };
+            }
+        }
+    }
+};
+
+const parseXLIFF = (file: LanguageFile, keysMap: Record<string, KeyAnalysis>, languagesSet: Set<string>) => {
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(file.content, "text/xml");
+
+    // Attempt to find target language from <file> tag
+    const files = xmlDoc.getElementsByTagName("file");
+    let targetLang = "unknown";
+
+    // Usually one file element per xliff, but just in case
+    if (files.length > 0) {
+        // Prefer target-language, fallback to source-language or infer from filename
+        const targetAttr = files[0].getAttribute("target-language");
+        if (targetAttr) {
+            targetLang = targetAttr;
+        } else {
+            // If no target-language, it might be a source-only file or we look at the file name
+            // but strictly speaking XLIFFs for translation should have target-language.
+            targetLang = file.langCode || "en";
+        }
+    } else {
+        targetLang = file.langCode || "en";
+    }
+
+    languagesSet.add(targetLang);
+
+    const transUnits = xmlDoc.getElementsByTagName("trans-unit");
+    for (let i = 0; i < transUnits.length; i++) {
+        const unit = transUnits[i];
+        const key = unit.getAttribute("id");
+        if (!key) continue;
+
+        const sourceEl = unit.getElementsByTagName("source")[0];
+        const targetEl = unit.getElementsByTagName("target")[0];
+        // NoteEl?
+
+        const sourceVal = sourceEl ? sourceEl.textContent || "" : "";
+        let targetVal = targetEl ? targetEl.textContent || "" : "";
+
+        // If target is missing, do we rely on source? 
+        // In XLIFF, if not translated, target might be missing or empty.
+        // If state is new, it might use source. 
+
+        const state = targetEl ? targetEl.getAttribute("state") : "new";
+
+        // Use source value as fallback for value if target is empty?
+        // Actually for analysis, we want to know what is translated.
+        // If target is empty, it's missing or pending.
+
+        // However, we need to populate the 'key' structure.
+        if (!keysMap[key]) {
+            keysMap[key] = { key, translations: {}, hasDuplicates: false };
+        }
+
+        keysMap[key].translations[targetLang] = {
+            value: targetVal || "", // Use empty string if missing to signify existence but no content
+            state: state || 'translated'
+        };
+
+        // Also we might want to track source language value if possible? 
+        // For now our data model is key -> lang -> value.
+        // If we want to capture source explicitly we'd need another field or treat source-language as a lang.
+        // Let's treat source-language as a lang too if we find it?
+        // Typically XLIFF has source-language="en".
+
+        if (files.length > 0) {
+            const sourceLang = files[0].getAttribute("source-language");
+            if (sourceLang && sourceLang !== targetLang) {
+                languagesSet.add(sourceLang);
+                // Only set source if not already set (avoid overwriting if multiple files have same source)
+                if (!keysMap[key].translations[sourceLang]) {
+                    keysMap[key].translations[sourceLang] = {
+                        value: sourceVal,
+                        state: 'translated' // Source is always 'translated' / original
+                    };
+                }
             }
         }
     }

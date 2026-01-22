@@ -12,8 +12,12 @@ The **Strings Analyser** provides deep insights into your localization files (`.
 - **Reporting**: Export the full analysis as a JSON report.
 
 ## Usage
-1. **Upload**: Drop your `.xcstrings` or `.xml` files into the input area.
-2. **Analyze**: The dashboard automatically updates with:
+## Usage
+1.  **Upload**:
+    -   Drop individual `.xcstrings`, `.xml`, or `.xliff` files.
+    -   **New**: Drop an entire `.xcloc` folder (or any folder) to scan for supported localized files.
+2.  **Select Files**: If multiple files or a folder is dropped, a selection modal will appear allowing you to choose which files to import.
+3.  **Analyze**: The dashboard automatically updates with:
    - **Language Breakdown**: Tables showing percentages and counts.
    - **Duplicate Detection**: Lists of repeated string values.
    - **Word Count**: Total word counts for budgeting.
