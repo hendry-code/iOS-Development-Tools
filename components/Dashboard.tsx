@@ -15,7 +15,8 @@ import {
     Copy,
     Terminal,
     Database,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Sparkles
 } from 'lucide-react';
 import {
     DndContext,
@@ -47,6 +48,7 @@ interface Tool {
     description: string;
     icon: React.ElementType;
     color: string;
+    glowColor: string;
 }
 
 interface SortableTileProps {
@@ -58,7 +60,7 @@ interface SortableTileProps {
     isHidden?: boolean;
 }
 
-// Separate component for the sortable item
+// Premium Tile Component with glassmorphism and glow effects
 const SortableTile: React.FC<SortableTileProps> = ({ tool, onTileClick, shouldAnimate, index, forceDragging, isHidden }) => {
     const {
         attributes,
@@ -73,18 +75,16 @@ const SortableTile: React.FC<SortableTileProps> = ({ tool, onTileClick, shouldAn
         transform: CSS.Transform.toString(transform),
         transition,
         zIndex: isDragging ? 50 : 'auto',
-        opacity: isDragging || isHidden ? 0 : 1, // Hide if dragging or if it's the expanding tile
+        opacity: isDragging || isHidden ? 0 : 1,
     };
 
     const Icon = tool.icon;
-
-    // Determine dragging state for visual feedback
     const activeDragging = forceDragging || isDragging;
 
     return (
         <button
             ref={setNodeRef}
-            style={{ ...style, ...(shouldAnimate ? { animationDelay: `${index * 0.05}s` } : {}) }}
+            style={{ ...style, ...(shouldAnimate ? { animationDelay: `${index * 0.06}s` } : {}) }}
             {...attributes}
             {...listeners}
             onClick={(e) => {
@@ -94,102 +94,149 @@ const SortableTile: React.FC<SortableTileProps> = ({ tool, onTileClick, shouldAn
                 }
             }}
             className={`
-                group relative flex flex-col p-5 h-full
-                rounded-3xl
-                bg-slate-800/40 border border-slate-700/50
-                hover:bg-slate-800/80 hover:border-slate-600/50
-                transition-all duration-300
+                group relative flex flex-col p-6 h-full min-h-[220px]
+                rounded-[28px]
+                bg-gradient-to-br from-slate-800/60 via-slate-800/40 to-slate-900/60
+                border border-white/[0.08]
+                hover:border-white/20
+                transition-all duration-500 ease-out
                 text-left
-                hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50
-                backdrop-blur-sm
+                hover:-translate-y-2 hover:scale-[1.02]
+                backdrop-blur-xl
                 overflow-hidden
                 ${shouldAnimate ? 'animate-slide-up-fade' : ''}
-                ${activeDragging ? 'shadow-2xl ring-2 ring-indigo-500 scale-105 bg-slate-800 z-50' : ''}
+                ${activeDragging ? 'shadow-2xl ring-2 ring-white/30 scale-105 z-50' : ''}
             `}
         >
-            {/* Ambient Background Gradient on Hover */}
-            <div className={`absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-gradient-to-br ${tool.color}`} />
+            {/* Animated mesh gradient background */}
+            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                <div className={`absolute inset-0 bg-gradient-to-br ${tool.color} opacity-[0.08]`} />
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-white/[0.08] via-transparent to-transparent" />
+            </div>
+
+            {/* Glow effect on hover */}
+            <div
+                className={`absolute -inset-1 rounded-[32px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl -z-10`}
+                style={{ background: `linear-gradient(135deg, ${tool.glowColor}20, transparent 60%)` }}
+            />
+
+            {/* Shimmer effect */}
+            <div className="absolute inset-0 overflow-hidden rounded-[28px]">
+                <div className="absolute -inset-full bg-gradient-to-r from-transparent via-white/[0.03] to-transparent group-hover:animate-shimmer" />
+            </div>
+
+            {/* Top highlight line */}
+            <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
 
             <div className="relative z-10 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-4">
-                    <div className={`
-                        w-14 h-14 rounded-2xl
-                        bg-gradient-to-br ${tool.color}
-                        flex items-center justify-center
-                        shadow-lg shadow-black/20
-                        group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300 ease-out
-                    `}>
-                        <Icon className="text-white drop-shadow-md" size={28} />
+                <div className="flex justify-between items-start mb-5">
+                    {/* Icon with enhanced glow */}
+                    <div className="relative">
+                        <div
+                            className="absolute inset-0 rounded-2xl blur-xl opacity-60 group-hover:opacity-80 transition-opacity duration-500"
+                            style={{ background: `linear-gradient(135deg, ${tool.glowColor}, transparent)` }}
+                        />
+                        <div className={`
+                            relative w-14 h-14 rounded-2xl
+                            bg-gradient-to-br ${tool.color}
+                            flex items-center justify-center
+                            shadow-lg
+                            group-hover:scale-110 group-hover:rotate-3 
+                            transition-all duration-500 ease-out
+                            ring-1 ring-white/20
+                        `}>
+                            <Icon className="text-white drop-shadow-lg" size={26} strokeWidth={1.5} />
+                        </div>
                     </div>
 
-                    <div className="text-slate-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                        <GripVertical size={20} />
+                    <div className="text-white/20 opacity-0 group-hover:opacity-100 transition-all duration-300 group-hover:rotate-90">
+                        <GripVertical size={18} />
                     </div>
                 </div>
 
-                <h3 className="text-lg font-bold text-slate-100 mb-2 group-hover:text-white transition-colors">
+                <h3 className="text-[17px] font-semibold text-white/90 mb-2 group-hover:text-white transition-colors duration-300 tracking-tight">
                     {tool.title}
                 </h3>
 
-                <p className="text-sm text-slate-400 leading-relaxed line-clamp-2 mb-4 group-hover:text-slate-300 transition-colors">
+                <p className="text-[13px] text-white/40 leading-relaxed line-clamp-2 mb-5 group-hover:text-white/60 transition-colors duration-300">
                     {tool.description}
                 </p>
 
-                <div className="mt-auto flex items-center text-xs font-bold uppercase tracking-wider text-slate-500 group-hover:text-indigo-400 transition-colors">
-                    <span className="mr-2">Open Tool</span>
-                    <div className="bg-slate-700/50 p-1 rounded-full group-hover:bg-indigo-500/20 transition-colors">
-                        <ArrowRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
+                <div className="mt-auto flex items-center gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-widest text-white/30 group-hover:text-white/60 transition-colors duration-300">
+                        Open
+                    </span>
+                    <div className="w-6 h-6 rounded-full bg-white/[0.05] group-hover:bg-white/10 flex items-center justify-center transition-all duration-300">
+                        <ArrowRight size={12} className="text-white/40 group-hover:text-white/80 group-hover:translate-x-0.5 transition-all duration-300" />
                     </div>
                 </div>
+            </div>
+
+            {/* Corner accent */}
+            <div className="absolute bottom-0 right-0 w-24 h-24 opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                <div className={`absolute bottom-0 right-0 w-full h-full bg-gradient-to-tl ${tool.color} opacity-[0.06] rounded-tl-full`} />
             </div>
         </button>
     );
 }
 
-// Component for the drag overlay - needs to look exactly like the tile but without sortable logic
+// Drag overlay tile with premium styling
 function DragOverlayTile({ tool }: { tool: Tool }) {
     const Icon = tool.icon;
     return (
         <div className={`
-            group relative flex flex-col p-5 h-full
-            rounded-3xl
-            bg-slate-800 border border-indigo-500/50
-            shadow-2xl shadow-indigo-500/20
+            group relative flex flex-col p-6 h-full min-h-[220px]
+            rounded-[28px]
+            bg-gradient-to-br from-slate-800/80 via-slate-800/60 to-slate-900/80
+            border border-white/20
+            shadow-2xl
             scale-105 cursor-grabbing
             text-left
             overflow-hidden
+            backdrop-blur-xl
         `}>
-            <div className={`absolute inset-0 opacity-10 bg-gradient-to-br ${tool.color}`} />
+            <div className={`absolute inset-0 bg-gradient-to-br ${tool.color} opacity-10`} />
+            <div
+                className="absolute -inset-2 rounded-[36px] blur-2xl -z-10"
+                style={{ background: `linear-gradient(135deg, ${tool.glowColor}30, transparent 60%)` }}
+            />
 
             <div className="relative z-10 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-4">
-                    <div className={`
-                        w-14 h-14 rounded-2xl
-                        bg-gradient-to-br ${tool.color}
-                        flex items-center justify-center
-                        shadow-lg shadow-black/20
-                        scale-110 rotate-3
-                    `}>
-                        <Icon className="text-white drop-shadow-md" size={28} />
+                <div className="flex justify-between items-start mb-5">
+                    <div className="relative">
+                        <div
+                            className="absolute inset-0 rounded-2xl blur-xl opacity-80"
+                            style={{ background: `linear-gradient(135deg, ${tool.glowColor}, transparent)` }}
+                        />
+                        <div className={`
+                            relative w-14 h-14 rounded-2xl
+                            bg-gradient-to-br ${tool.color}
+                            flex items-center justify-center
+                            shadow-lg scale-110 rotate-3
+                            ring-1 ring-white/20
+                        `}>
+                            <Icon className="text-white drop-shadow-lg" size={26} strokeWidth={1.5} />
+                        </div>
                     </div>
-
-                    <div className="text-slate-500">
-                        <GripVertical size={20} />
+                    <div className="text-white/40 rotate-90">
+                        <GripVertical size={18} />
                     </div>
                 </div>
 
-                <h3 className="text-lg font-bold text-white mb-2">
+                <h3 className="text-[17px] font-semibold text-white mb-2 tracking-tight">
                     {tool.title}
                 </h3>
 
-                <p className="text-sm text-slate-300 leading-relaxed line-clamp-2 mb-4">
+                <p className="text-[13px] text-white/50 leading-relaxed line-clamp-2 mb-5">
                     {tool.description}
                 </p>
 
-                <div className="mt-auto flex items-center text-xs font-bold uppercase tracking-wider text-indigo-400">
-                    <span className="mr-2">Open Tool</span>
-                    <div className="bg-indigo-500/20 p-1 rounded-full">
-                        <ArrowRight size={12} />
+                <div className="mt-auto flex items-center gap-2">
+                    <span className="text-[11px] font-medium uppercase tracking-widest text-white/50">
+                        Open
+                    </span>
+                    <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
+                        <ArrowRight size={12} className="text-white/70" />
                     </div>
                 </div>
             </div>
@@ -197,13 +244,12 @@ function DragOverlayTile({ tool }: { tool: Tool }) {
     );
 }
 
-// Component for the expanding animation
+// Expanding tile animation overlay
 function ExpandingTileOverlay({ tool, initialRect }: { tool: Tool; initialRect: DOMRect }) {
     const Icon = tool.icon;
     const [isExpanded, setIsExpanded] = useState(false);
 
     useEffect(() => {
-        // Trigger expansion next frame
         requestAnimationFrame(() => {
             setIsExpanded(true);
         });
@@ -216,7 +262,7 @@ function ExpandingTileOverlay({ tool, initialRect }: { tool: Tool; initialRect: 
             width: '100vw',
             height: '100vh',
             borderRadius: 0,
-            opacity: 1, // Keep content visible for smooth transition
+            opacity: 1,
             position: 'fixed',
             zIndex: 9999,
         }
@@ -225,33 +271,38 @@ function ExpandingTileOverlay({ tool, initialRect }: { tool: Tool; initialRect: 
             left: initialRect.left,
             width: initialRect.width,
             height: initialRect.height,
-            borderRadius: '1.5rem', // Matching rounded-3xl (24px)
+            borderRadius: '28px',
             position: 'fixed',
             zIndex: 9999,
         };
 
     return (
         <div
-            className={`fixed bg-slate-900 border transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden ${isExpanded ? 'border-transparent' : 'border-slate-700/50'}`}
+            className={`fixed bg-slate-900 border transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] overflow-hidden ${isExpanded ? 'border-transparent' : 'border-white/10'}`}
             style={style}
         >
-            {/* Background gradient that expands to fill screen */}
             <div className={`absolute inset-0 bg-gradient-to-br ${tool.color} transition-opacity duration-500 ${isExpanded ? 'opacity-100' : 'opacity-10'}`}>
                 <div className={`absolute inset-0 bg-slate-900 ${isExpanded ? 'opacity-95' : 'opacity-0'} transition-opacity duration-500`} />
             </div>
 
-            <div className={`relative w-full h-full p-5 flex flex-col transition-all duration-300 ${isExpanded ? 'opacity-0 scale-95' : 'opacity-100'}`}>
-                <div className="flex justify-between items-start mb-4">
-                    <div className={`
-                        w-14 h-14 rounded-2xl
-                        bg-gradient-to-br ${tool.color}
-                        flex items-center justify-center
-                        shadow-lg shadow-black/20
-                    `}>
-                        <Icon className="text-white drop-shadow-md" size={28} />
+            <div className={`relative w-full h-full p-6 flex flex-col transition-all duration-300 ${isExpanded ? 'opacity-0 scale-95' : 'opacity-100'}`}>
+                <div className="flex justify-between items-start mb-5">
+                    <div className="relative">
+                        <div
+                            className="absolute inset-0 rounded-2xl blur-xl opacity-60"
+                            style={{ background: `linear-gradient(135deg, ${tool.glowColor}, transparent)` }}
+                        />
+                        <div className={`
+                            relative w-14 h-14 rounded-2xl
+                            bg-gradient-to-br ${tool.color}
+                            flex items-center justify-center
+                            shadow-lg ring-1 ring-white/20
+                        `}>
+                            <Icon className="text-white drop-shadow-lg" size={26} strokeWidth={1.5} />
+                        </div>
                     </div>
                 </div>
-                <h3 className="text-lg font-bold text-slate-100 mb-2">
+                <h3 className="text-[17px] font-semibold text-white mb-2 tracking-tight">
                     {tool.title}
                 </h3>
             </div>
@@ -265,105 +316,120 @@ const initialTools: Tool[] = [
         title: 'Combine Strings',
         description: 'Merge multiple .strings files into a single file',
         icon: FileCode2,
-        color: 'from-blue-500 to-cyan-500',
+        color: 'from-blue-500 to-cyan-400',
+        glowColor: '#06b6d4',
     },
     {
         id: 'extract',
         title: 'Extract Catalog',
         description: 'Extract strings from .xcstrings catalog files',
         icon: BookOpen,
-        color: 'from-purple-500 to-indigo-500',
+        color: 'from-violet-500 to-purple-400',
+        glowColor: '#a855f7',
     },
     {
         id: 'properties',
         title: 'Properties Converter',
         description: 'Convert .properties files to .strings format',
         icon: FileJson,
-        color: 'from-emerald-500 to-green-500',
+        color: 'from-emerald-500 to-teal-400',
+        glowColor: '#14b8a6',
     },
     {
         id: 'editor',
         title: 'File Editor',
         description: 'Edit and manage your localization files',
         icon: Edit3,
-        color: 'from-orange-500 to-amber-500',
+        color: 'from-amber-500 to-orange-400',
+        glowColor: '#f97316',
     },
     {
         id: 'renamer',
         title: 'Key Renamer',
         description: 'Batch rename keys across multiple files',
         icon: Variable,
-        color: 'from-pink-500 to-rose-500',
+        color: 'from-pink-500 to-rose-400',
+        glowColor: '#f43f5e',
     },
     {
         id: 'json-converter',
         title: 'JSON Converter',
         description: 'Convert between key-value JSON and .strings files.',
         icon: FileJson,
-        color: 'from-yellow-400 to-amber-500',
+        color: 'from-yellow-500 to-amber-400',
+        glowColor: '#fbbf24',
     },
     {
         id: 'merge',
         title: 'Merge Strings',
         description: 'Smart merge with conflict resolution',
         icon: Merge,
-        color: 'from-indigo-500 to-violet-600',
+        color: 'from-indigo-500 to-blue-400',
+        glowColor: '#6366f1',
     },
     {
         id: 'analyser',
         title: 'Strings Analyser',
         description: 'Deep analysis for .xcstrings and .xml files',
         icon: ScanSearch,
-        color: 'from-violet-600 to-indigo-600',
+        color: 'from-purple-600 to-violet-400',
+        glowColor: '#8b5cf6',
     },
     {
         id: 'xml-converter',
         title: 'XML Converter',
         description: 'Convert .strings, .stringsdict, .xcstrings to Android XML',
         icon: FileCode2,
-        color: 'from-teal-400 to-emerald-500',
+        color: 'from-teal-500 to-cyan-400',
+        glowColor: '#22d3d1',
     },
     {
         id: 'json-formatter',
         title: 'JSON Beautifier',
         description: 'Format, validate, and convert JSON data',
         icon: Braces,
-        color: 'from-yellow-500 to-orange-500',
+        color: 'from-orange-500 to-yellow-400',
+        glowColor: '#f59e0b',
     },
     {
         id: 'json-to-swift',
         title: 'JSON to Swift',
         description: 'Convert JSON to Swift Codable structs',
         icon: Code,
-        color: 'from-orange-500 to-red-500',
+        color: 'from-red-500 to-orange-400',
+        glowColor: '#ef4444',
     },
     {
         id: 'duplicate-finder',
         title: 'Duplicate Value Finder',
         description: 'Find duplicate values across files',
         icon: Copy,
-        color: 'from-teal-500 to-cyan-600',
+        color: 'from-cyan-500 to-teal-400',
+        glowColor: '#06b6d4',
     },
     {
         id: 'script-runner',
         title: 'Script Runner',
         description: 'Run JS scripts on text/files',
         icon: Terminal,
-        color: 'from-rose-500 to-red-600',
+        color: 'from-rose-500 to-pink-400',
+        glowColor: '#f43f5e',
     },
     {
         id: 'mock-data',
         title: 'Mock Data Generator',
         description: 'Generate realistic mock data (JSON/CSV)',
         icon: Database,
-        color: 'from-green-500 to-emerald-600',
+        color: 'from-green-500 to-emerald-400',
+        glowColor: '#22c55e',
     },
     {
         id: 'app-icon-generator',
         title: 'App Icon Generator',
         description: 'Generate standard iOS App Icons & Contents.json',
         icon: ImageIcon,
-        color: 'from-blue-600 to-indigo-600',
+        color: 'from-blue-600 to-indigo-400',
+        glowColor: '#6366f1',
     },
 ];
 
@@ -373,17 +439,12 @@ export function Dashboard({ setView }: DashboardProps) {
     });
 
     const [activeId, setActiveId] = useState<string | null>(null);
-
-    // Animation state
     const [expandingId, setExpandingId] = useState<string | null>(null);
     const [expansionRect, setExpansionRect] = useState<DOMRect | null>(null);
 
     useEffect(() => {
         if (shouldAnimate) {
-            // Mark as visited immediately to ensure we don't animate again if user navigates away quickly
             sessionStorage.setItem('dashboard_visited', 'true');
-
-            // Wait for all staggered animations to complete (10 items * 0.1s + ~0.5s duration + buffer)
             const timer = setTimeout(() => {
                 setShouldAnimate(false);
             }, 2500);
@@ -396,18 +457,12 @@ export function Dashboard({ setView }: DashboardProps) {
         if (savedOrder) {
             try {
                 const order: string[] = JSON.parse(savedOrder);
-                // Create a map for quick lookup
                 const toolMap = new Map(initialTools.map(t => [t.id, t]));
-
-                // Reconstruct the array based on saved order, filtering out any unknown IDs (e.g. if tools were removed)
                 const orderedTools = order
                     .filter(id => toolMap.has(id))
                     .map(id => toolMap.get(id)!);
-
-                // Add any new tools that weren't in the saved order
                 const savedSet = new Set(order);
                 const newTools = initialTools.filter(t => !savedSet.has(t.id));
-
                 return [...orderedTools, ...newTools];
             } catch (e) {
                 console.error("Failed to parse saved dashboard order", e);
@@ -420,7 +475,7 @@ export function Dashboard({ setView }: DashboardProps) {
     const sensors = useSensors(
         useSensor(PointerSensor, {
             activationConstraint: {
-                distance: 8, // Require movement of 8px before drag starts to prevent accidental drags on click
+                distance: 8,
             },
         }),
         useSensor(KeyboardSensor, {
@@ -434,17 +489,12 @@ export function Dashboard({ setView }: DashboardProps) {
 
     function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event;
-
         if (over && active.id !== over.id) {
             setTools((items) => {
                 const oldIndex = items.findIndex((t) => t.id === active.id);
                 const newIndex = items.findIndex((t) => t.id === over.id);
-
                 const newItems = arrayMove(items, oldIndex, newIndex) as Tool[];
-
-                // Persist new order
                 localStorage.setItem('dashboard_tile_order', JSON.stringify(newItems.map(t => t.id)));
-
                 return newItems;
             });
         }
@@ -454,55 +504,86 @@ export function Dashboard({ setView }: DashboardProps) {
     const handleTileClick = (id: string, rect: DOMRect) => {
         setExpansionRect(rect);
         setExpandingId(id);
-
-        // Wait for expansion animation to cover the screen before switching view
-        // Animation duration set to 500ms in ExpandingTileOverlay
         setTimeout(() => {
             setView(id as ViewMode);
         }, 500);
     };
 
     return (
-        <div className={`w-full min-h-screen p-4 md:p-8 flex flex-col items-center justify-center bg-slate-900 text-slate-100 font-sans transition-opacity duration-500 ${expandingId ? 'opacity-0' : ''}`}>
-            <header className="text-center mb-16">
-                <h1 className="text-5xl sm:text-7xl font-extrabold bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight mb-6 drop-shadow-2xl">
-                    Development Tools
-                </h1>
-                <p className="text-xl text-slate-400 max-w-2xl mx-auto font-light leading-relaxed">
-                    Professional localization and development utilities.
-                </p>
-            </header>
+        <div className={`relative w-full min-h-screen flex flex-col items-center justify-center text-white font-sans transition-opacity duration-500 ${expandingId ? 'opacity-0' : ''}`}>
+            {/* Animated background gradients */}
+            <div className="fixed inset-0 -z-10 overflow-hidden">
+                <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
+                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/10 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '12s', animationDelay: '1s' }} />
+            </div>
 
-            <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-            >
-                <div className="w-full max-w-7xl grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4">
-                    <SortableContext
-                        items={tools.map(t => t.id)}
-                        strategy={rectSortingStrategy}
-                    >
-                        {tools.map((tool, index) => (
-                            <SortableTile
-                                key={tool.id}
-                                tool={tool}
-                                onTileClick={handleTileClick}
-                                setView={setView} // Kept for compatibility but unused in SortableTile now
-                                shouldAnimate={shouldAnimate}
-                                index={index}
-                                isHidden={expandingId === tool.id}
-                            />
-                        ))}
-                    </SortableContext>
-                </div>
-                <DragOverlay>
-                    {activeId ? (
-                        <DragOverlayTile tool={tools.find(t => t.id === activeId)!} />
-                    ) : null}
-                </DragOverlay>
-            </DndContext>
+            {/* Subtle grid pattern */}
+            <div className="fixed inset-0 -z-10 opacity-[0.015]" style={{
+                backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+                backgroundSize: '64px 64px'
+            }} />
+
+            <div className="relative z-10 w-full p-6 md:p-12">
+                {/* Premium Header */}
+                <header className="text-center mb-16">
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 mb-8 backdrop-blur-sm">
+                        <Sparkles size={14} className="text-amber-400" />
+                        <span className="text-xs font-medium text-white/60 tracking-wider uppercase">Development Suite</span>
+                    </div>
+
+                    <h1 className="text-5xl sm:text-7xl font-bold tracking-tight mb-6">
+                        <span className="bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">
+                            Development
+                        </span>
+                        <br />
+                        <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                            Tools
+                        </span>
+                    </h1>
+
+                    <p className="text-lg text-white/40 max-w-xl mx-auto font-light leading-relaxed">
+                        Professional localization and development utilities crafted for iOS developers.
+                    </p>
+                </header>
+
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                >
+                    <div className="w-full max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 px-4">
+                        <SortableContext
+                            items={tools.map(t => t.id)}
+                            strategy={rectSortingStrategy}
+                        >
+                            {tools.map((tool, index) => (
+                                <SortableTile
+                                    key={tool.id}
+                                    tool={tool}
+                                    onTileClick={handleTileClick}
+                                    shouldAnimate={shouldAnimate}
+                                    index={index}
+                                    isHidden={expandingId === tool.id}
+                                />
+                            ))}
+                        </SortableContext>
+                    </div>
+                    <DragOverlay>
+                        {activeId ? (
+                            <DragOverlayTile tool={tools.find(t => t.id === activeId)!} />
+                        ) : null}
+                    </DragOverlay>
+                </DndContext>
+
+                {/* Footer */}
+                <footer className="mt-20 text-center">
+                    <p className="text-xs text-white/20 tracking-wider">
+                        Drag tiles to reorder • Click to open tool
+                    </p>
+                </footer>
+            </div>
 
             {expandingId && expansionRect && (
                 <ExpandingTileOverlay
@@ -513,6 +594,3 @@ export function Dashboard({ setView }: DashboardProps) {
         </div>
     );
 }
-
-// Helper for type compatibility if needed, though handleTileClick replaces direct setView
-

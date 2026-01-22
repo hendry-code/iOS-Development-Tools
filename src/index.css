@@ -101,3 +101,18 @@
 .animate-slide-up-fade {
   animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
+
+/* Premium shimmer effect */
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.group:hover .group-hover\:animate-shimmer {
+  animation: shimmer 1.5s ease-in-out;
+}
