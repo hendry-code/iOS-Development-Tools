@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { ViewMode } from '../types';
 import {
     FileCode2,
@@ -510,7 +511,7 @@ export function Dashboard({ setView }: DashboardProps) {
     };
 
     return (
-        <div className={`relative w-full min-h-screen flex flex-col items-center justify-center text-white font-sans transition-opacity duration-500 ${expandingId ? 'opacity-0' : ''}`}>
+        <div className={`relative w-full min-h-screen flex flex-col items-center text-white font-sans transition-opacity duration-500 ${expandingId ? 'opacity-0' : ''}`}>
             {/* Animated background gradients */}
             <div className="fixed inset-0 -z-10 overflow-hidden">
                 <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-500/20 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
@@ -524,7 +525,7 @@ export function Dashboard({ setView }: DashboardProps) {
                 backgroundSize: '64px 64px'
             }} />
 
-            <div className="relative z-10 w-full p-6 md:p-12">
+            <div className="relative z-10 w-full p-6 md:p-12 pt-16">
                 {/* Premium Header */}
                 <header className="text-center mb-16">
                     <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.05] border border-white/10 mb-8 backdrop-blur-sm">
@@ -570,11 +571,20 @@ export function Dashboard({ setView }: DashboardProps) {
                             ))}
                         </SortableContext>
                     </div>
-                    <DragOverlay>
-                        {activeId ? (
-                            <DragOverlayTile tool={tools.find(t => t.id === activeId)!} />
-                        ) : null}
-                    </DragOverlay>
+                    {createPortal(
+                        <DragOverlay
+                            adjustScale={false}
+                            dropAnimation={{
+                                duration: 250,
+                                easing: 'cubic-bezier(0.18, 0.67, 0.6, 1.22)',
+                            }}
+                        >
+                            {activeId ? (
+                                <DragOverlayTile tool={tools.find(t => t.id === activeId)!} />
+                            ) : null}
+                        </DragOverlay>,
+                        document.body
+                    )}
                 </DndContext>
 
                 {/* Footer */}
@@ -583,14 +593,15 @@ export function Dashboard({ setView }: DashboardProps) {
                         Drag tiles to reorder • Click to open tool
                     </p>
                 </footer>
-            </div>
+            </div >
 
             {expandingId && expansionRect && (
                 <ExpandingTileOverlay
                     tool={tools.find(t => t.id === expandingId)!}
                     initialRect={expansionRect}
                 />
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
