@@ -35,10 +35,11 @@ export function parseStringsFile(content: string): ParsedStrings {
 export function parseStringsDictFile(content: string): ParsedStrings {
     const strings: ParsedStrings = {};
     const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(content, "application/xml");
+    const xmlDoc = parser.parseFromString(content.trim(), "application/xml");
 
-    if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
-        throw new Error("Invalid .stringsdict XML format.");
+    const parserError = xmlDoc.getElementsByTagName("parsererror")[0];
+    if (parserError) {
+        throw new Error(`Invalid .stringsdict XML format. ${parserError.textContent}`);
     }
 
     const topDict = xmlDoc.querySelector('plist > dict');
@@ -484,9 +485,13 @@ export function mergeStringsIntoCatalog(catalogContent: string, stringsFiles: La
 
         let parsedStrings: ParsedStrings;
         try {
-            parsedStrings = parseStringsFile(file.content);
+            if (file.name.endsWith('.stringsdict')) {
+                parsedStrings = parseStringsDictFile(file.content);
+            } else {
+                parsedStrings = parseStringsFile(file.content);
+            }
         } catch (e) {
-            console.warn(`Failed to parse ${file.name}, skipping.`);
+            console.warn(`Failed to parse ${file.name}, skipping. Error:`, e);
             continue;
         }
 
@@ -496,9 +501,29 @@ export function mergeStringsIntoCatalog(catalogContent: string, stringsFiles: La
                     catalog.strings[key].localizations = {};
                 }
 
-                // We only support simple strings for now in this merge operation as per requirement "exact keys"
-                // If the value in .strings is a simple string, we update/add it.
-                if (typeof value === 'string') {
+                if (isPlural(value)) {
+                    // Handle Plural
+                    const pluralVariations: Record<string, { stringUnit: { state: string; value: string } }> = {};
+                    for (const [pluralKey, pluralValue] of Object.entries(value)) {
+                        if (pluralKey === '_isPlural') continue;
+                        if (typeof pluralValue === 'string') {
+                            pluralVariations[pluralKey] = {
+                                stringUnit: {
+                                    state: "translated",
+                                    value: pluralValue
+                                }
+                            };
+                        }
+                    }
+
+                    catalog.strings[key].localizations[langCode] = {
+                        variations: {
+                            plural: pluralVariations
+                        }
+                    };
+
+                } else if (typeof value === 'string') {
+                    // Handle Simple String
                     catalog.strings[key].localizations[langCode] = {
                         stringUnit: {
                             state: "translated",

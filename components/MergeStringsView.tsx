@@ -215,7 +215,7 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
                                         onClick={() => stringsInputRef.current?.click()}
                                     >
                                         <p className="text-sm text-slate-500 mb-1">No translation files added</p>
-                                        <p className="text-xs text-slate-600">Drag & drop or click to upload</p>
+                                        <p className="text-xs text-slate-600">Drag & drop or click to upload<br />(.strings or .stringsdict)</p>
                                     </div>
                                 ) : (
                                     stringsFiles.map((file) => (
@@ -244,7 +244,7 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
                             <button onClick={() => stringsInputRef.current?.click()} className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center justify-end gap-1 ml-auto px-2 py-1 rounded hover:bg-indigo-500/10 transition-colors">
                                 <Plus size={14} /> Add files
                             </button>
-                            <input type="file" ref={stringsInputRef} onChange={handleStringsUpload} accept=".strings" className="hidden" multiple />
+                            <input type="file" ref={stringsInputRef} onChange={handleStringsUpload} accept=".strings,.stringsdict" className="hidden" multiple />
                         </div>
                     </div>
 
