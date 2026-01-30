@@ -10,6 +10,7 @@ import { PropertiesConverterView } from './components/ConverterView';
 import { FileEditorView } from './components/FileEditorView';
 import { KeyRenamerView } from './components/KeyRenamerView';
 import { MergeStringsView } from './components/MergeStringsView';
+import { MergeStringCatalogsView } from './components/MergeStringCatalogsView';
 
 import { StringsAnalyserView } from './components/StringsAnalyserView';
 import { JsonConverterView } from './components/JsonConverterView';
@@ -43,6 +44,8 @@ function App() {
         return <KeyRenamerView onBack={() => setView('dashboard')} />;
       case 'merge':
         return <MergeStringsView onBack={() => setView('dashboard')} />;
+      case 'merge-catalogs':
+        return <MergeStringCatalogsView onBack={() => setView('dashboard')} />;
 
       case 'analyser':
         return <StringsAnalyserView onBack={() => setView('dashboard')} />;

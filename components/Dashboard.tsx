@@ -17,7 +17,8 @@ import {
     Terminal,
     Database,
     Image as ImageIcon,
-    Sparkles
+    Sparkles,
+    Layers
 } from 'lucide-react';
 import {
     DndContext,
@@ -367,6 +368,14 @@ const initialTools: Tool[] = [
         icon: Merge,
         color: 'from-indigo-500 to-blue-400',
         glowColor: '#6366f1',
+    },
+    {
+        id: 'merge-catalogs',
+        title: 'Merge String Catalogs',
+        description: 'Merge multiple .xcstrings files.',
+        icon: Layers,
+        color: 'from-violet-600 to-indigo-600',
+        glowColor: '#7c3aed',
     },
     {
         id: 'analyser',

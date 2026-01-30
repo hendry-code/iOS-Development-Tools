@@ -196,9 +196,6 @@ export function parseJson(content: string): ParsedStrings {
             }
         }
 
-        // Simple flat check first, if it's all strings, great. If nested, we flatten.
-        // If it looks like plural structure, handle it?
-        // For simplicity v1: We assume flat JSON "key": "value" or "section": { "key": "value" } -> "section.key": "value"
         flatten(json);
 
         return strings;
@@ -536,4 +533,264 @@ export function mergeStringsIntoCatalog(catalogContent: string, stringsFiles: La
     }
 
     return JSON.stringify(catalog, null, 2);
+}
+
+// --- SMART MERGE LOGIC ---
+
+/**
+ * Checks for strict deep equality.
+ */
+export function isEqual(a: any, b: any): boolean {
+    if (a === b) return true;
+    if (typeof a !== 'object' || a === null || typeof b !== 'object' || b === null) return false;
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) return false;
+    for (const key of keysA) {
+        if (!keysB.includes(key) || !isEqual(a[key], b[key])) return false;
+    }
+    return true;
+}
+
+/**
+ * Merges two localization objects (e.g. { stringUnit: { ... } }) for a specific language.
+ * Returns the "better" one, or null if they are strictly conflicting (different translations).
+ */
+function smartMergeLocalization(locA: any, locB: any): any | null {
+    if (!locA) return locB;
+    if (!locB) return locA;
+    if (isEqual(locA, locB)) return locA;
+
+    // Helper: isTranslated(loc)
+    const isTranslated = (l: any) => {
+        // Simple string unit
+        if (l.stringUnit && l.stringUnit.state === 'translated' && l.stringUnit.value) return true;
+        // Plural
+        if (l.variations && l.variations.plural) {
+            // Check if at least one variant is translated? Or consider it fully translated?
+            // Usually "state" isn't on the top level for plurals.
+            // We can check if 'other' has value.
+            return true;
+        }
+        return false;
+    };
+
+    const transA = isTranslated(locA);
+    const transB = isTranslated(locB);
+
+    if (transA && !transB) return locA;
+    if (!transA && transB) return locB;
+
+    // Both translated or both untranslated, but different content -> Conflict
+    return null;
+}
+
+
+/**
+ * Attempts to smartly merge multiple variations of a Key Entity.
+ * Returns the merged entity if successful, or null if there are unresolvable conflicts.
+ */
+function attemptSmartMergeKey(variations: any[]): any | null {
+    if (variations.length === 0) return null;
+    if (variations.length === 1) return variations[0];
+
+    // Start with the first variation as base
+    // Use deep copy to avoid mutation issues
+    let merged = JSON.parse(JSON.stringify(variations[0]));
+
+    for (let i = 1; i < variations.length; i++) {
+        const next = variations[i];
+
+        // Merge extractionState (prioritize 'manual' or 'migrated' over 'stale'?)
+        // actually xcstrings usually just have one state. existing logic uses first found.
+        // Let's assume metadata from first file is fine nicely, focus on localizations.
+
+        // Merge localizations
+        if (!merged.localizations) merged.localizations = {};
+        if (!next.localizations) next.localizations = {};
+
+        const allLangs = new Set([...Object.keys(merged.localizations), ...Object.keys(next.localizations)]);
+
+        for (const lang of allLangs) {
+            const locA = merged.localizations[lang];
+            const locB = next.localizations[lang];
+
+            const result = smartMergeLocalization(locA, locB);
+            if (result === null) {
+                // Conflict detected for this language
+                return null;
+            }
+            merged.localizations[lang] = result;
+        }
+    }
+    return merged;
+}
+
+export interface MergeConflict {
+    key: string;
+    variations: {
+        fileName: string;
+        value: any;
+    }[];
+}
+
+export function analyzeMergeConflicts(files: LanguageFile[]): { conflicts: MergeConflict[], sourceLanguageWarnings: string[] } {
+    const conflicts: MergeConflict[] = [];
+    const sourceLanguageWarnings: string[] = [];
+
+    if (files.length === 0) return { conflicts, sourceLanguageWarnings };
+
+    const parsedFiles = files.map(f => {
+        try {
+            return { name: f.name, content: JSON.parse(f.content) };
+        } catch (e) {
+            throw new Error(`Invalid JSON in file: ${f.name}`);
+        }
+    });
+
+    // Check Source Language Consistency
+    const refSourceLang = parsedFiles[0].content.sourceLanguage;
+    parsedFiles.forEach(f => {
+        if (f.content.sourceLanguage !== refSourceLang) {
+            sourceLanguageWarnings.push(`${f.name} (Source: ${f.content.sourceLanguage}) differs from ${parsedFiles[0].name} (Source: ${refSourceLang})`);
+        }
+    });
+
+    const allKeys = new Set<string>();
+    parsedFiles.forEach(f => {
+        if (f.content.strings) Object.keys(f.content.strings).forEach(k => allKeys.add(k));
+    });
+
+    for (const key of allKeys) {
+        const variations: { fileName: string, value: any }[] = [];
+        parsedFiles.forEach(f => {
+            if (f.content.strings && f.content.strings[key]) {
+                variations.push({ fileName: f.name, value: f.content.strings[key] });
+            }
+        });
+
+        if (variations.length > 1) {
+            const values = variations.map(v => v.value);
+            // Try smart merge
+            const smartResult = attemptSmartMergeKey(values);
+
+            if (!smartResult) {
+                // Failed to smart
+                conflicts.push({ key, variations });
+            }
+        }
+    }
+
+    return { conflicts, sourceLanguageWarnings };
+}
+
+export interface MergeReport {
+    totalKeys: number;
+    mergedKeysCount: number;
+    conflictsResolved: number;
+    filesStats: {
+        fileName: string;
+        keyCount: number;
+        languageCount: number;
+    }[];
+    missingKeys: {
+        key: string;
+        reason: string;
+    }[];
+    logs: string[];
+}
+
+export interface MergeResult {
+    outputContent: string;
+    report: MergeReport;
+}
+
+export function mergeStringCatalogs(files: LanguageFile[], resolutions: Record<string, any>): MergeResult {
+    const report: MergeReport = {
+        totalKeys: 0,
+        mergedKeysCount: 0,
+        conflictsResolved: 0,
+        filesStats: [],
+        missingKeys: [],
+        logs: []
+    };
+
+    if (files.length === 0) return { outputContent: "", report };
+
+    const parsedFiles = files.map(f => {
+        try {
+            const content = JSON.parse(f.content);
+            const keyCount = content.strings ? Object.keys(content.strings).length : 0;
+            const langSet = new Set<string>();
+            if (content.strings) {
+                Object.values(content.strings).forEach((val: any) => {
+                    if (val.localizations) Object.keys(val.localizations).forEach(l => langSet.add(l));
+                });
+            }
+            report.filesStats.push({
+                fileName: f.name,
+                keyCount: keyCount,
+                languageCount: langSet.size
+            });
+            return { name: f.name, content };
+        }
+        catch {
+            report.logs.push(`Error parsing file: ${f.name}`);
+            return { name: f.name, content: { strings: {}, sourceLanguage: "en", version: "1.0" } };
+        }
+    });
+
+    const mergedCatalog = {
+        sourceLanguage: parsedFiles[0].content.sourceLanguage || "en",
+        strings: {} as Record<string, any>,
+        version: parsedFiles[0].content.version || "1.0"
+    };
+
+    const allKeys = new Set<string>();
+    parsedFiles.forEach(f => {
+        if (f.content.strings) Object.keys(f.content.strings).forEach(k => allKeys.add(k));
+    });
+
+    report.totalKeys = allKeys.size;
+    report.logs.push(`Found ${allKeys.size} unique keys across ${files.length} files.`);
+
+    for (const key of allKeys) {
+        if (resolutions[key]) {
+            mergedCatalog.strings[key] = resolutions[key];
+            report.conflictsResolved++;
+            report.logs.push(`Key '${key}' merged using user resolution.`);
+            continue;
+        }
+
+        const variations = parsedFiles
+            .filter(f => f.content.strings && f.content.strings[key])
+            .map(f => ({
+                fileName: f.name,
+                value: f.content.strings[key]
+            }));
+
+        const values = variations.map(v => v.value);
+        const smartResult = attemptSmartMergeKey(values);
+
+        if (smartResult) {
+            mergedCatalog.strings[key] = smartResult;
+            if (variations.length > 1) {
+                const fileNames = variations.map(v => v.fileName).join(', ');
+                report.logs.push(`Key '${key}' auto-merged from [${fileNames}].`);
+            }
+        } else {
+            // This should strictly logically only happen if existing conflict resolution logic failed or wasn't provided for a real conflict
+            mergedCatalog.strings[key] = values[0]; // Fallback
+            report.logs.push(`WARNING: Key '${key}' had unresolved conflict. Defaulted to first occurrence.`);
+            report.missingKeys.push({ key, reason: "Unresolved conflict, used default." });
+        }
+    }
+
+    report.mergedKeysCount = Object.keys(mergedCatalog.strings).length;
+    report.logs.push(`Merge complete. Final catalog has ${report.mergedKeysCount} keys.`);
+
+    return {
+        outputContent: JSON.stringify(mergedCatalog, null, 2),
+        report
+    };
 }
