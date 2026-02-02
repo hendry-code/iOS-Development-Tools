@@ -21,7 +21,8 @@ import {
     Layers,
     Languages,
     RefreshCw,
-    Wrench
+    Wrench,
+    Palette
 } from 'lucide-react';
 import {
     DndContext,
@@ -582,6 +583,15 @@ const initialTools: Tool[] = [
         icon: ImageIcon,
         color: 'from-blue-600 to-indigo-400',
         glowColor: '#6366f1',
+        category: 'utilities',
+    },
+    {
+        id: 'color-converter',
+        title: 'Color Converter',
+        description: 'Convert between HEX, RGB, HSL, Swift, Android & Tailwind',
+        icon: Palette,
+        color: 'from-fuchsia-500 to-pink-400',
+        glowColor: '#d946ef',
         category: 'utilities',
     },
 ];

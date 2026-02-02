@@ -26,6 +26,7 @@ import { ThemeProvider } from './src/context/ThemeContext';
 import { ThemeToggle } from './components/ThemeToggle';
 
 import { AppIconGeneratorView } from './components/AppIconGeneratorView';
+import { ColorConverterView } from './components/ColorConverterView';
 
 function App() {
   const [view, setView] = useState<ViewMode>('dashboard');
@@ -65,6 +66,8 @@ function App() {
         return <MockDataGeneratorView onBack={() => setView('dashboard')} />;
       case 'app-icon-generator':
         return <AppIconGeneratorView onBack={() => setView('dashboard')} />;
+      case 'color-converter':
+        return <ColorConverterView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;
