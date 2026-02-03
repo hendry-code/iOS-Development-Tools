@@ -27,6 +27,7 @@ import { ThemeToggle } from './components/ThemeToggle';
 
 import { AppIconGeneratorView } from './components/AppIconGeneratorView';
 import { ColorConverterView } from './components/ColorConverterView';
+import { EncodingToolView } from './components/EncodingToolView';
 
 function App() {
   const [view, setView] = useState<ViewMode>('dashboard');
@@ -68,6 +69,8 @@ function App() {
         return <AppIconGeneratorView onBack={() => setView('dashboard')} />;
       case 'color-converter':
         return <ColorConverterView onBack={() => setView('dashboard')} />;
+      case 'encoding-tool':
+        return <EncodingToolView onBack={() => setView('dashboard')} />;
       case 'dashboard':
       default:
         return <Dashboard setView={setView} />;

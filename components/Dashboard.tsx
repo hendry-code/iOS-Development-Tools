@@ -22,7 +22,8 @@ import {
     Languages,
     RefreshCw,
     Wrench,
-    Palette
+    Palette,
+    Binary
 } from 'lucide-react';
 import {
     DndContext,
@@ -592,6 +593,15 @@ const initialTools: Tool[] = [
         icon: Palette,
         color: 'from-fuchsia-500 to-pink-400',
         glowColor: '#d946ef',
+        category: 'utilities',
+    },
+    {
+        id: 'encoding-tool',
+        title: 'Encoding Tool',
+        description: 'Base64, URL, HTML, Hex encoding & JWT decoder',
+        icon: Binary,
+        color: 'from-indigo-500 to-violet-400',
+        glowColor: '#8b5cf6',
         category: 'utilities',
     },
 ];
