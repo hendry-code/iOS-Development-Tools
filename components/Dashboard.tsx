@@ -23,7 +23,8 @@ import {
     RefreshCw,
     Wrench,
     Palette,
-    Binary
+    Binary,
+    Smartphone
 } from 'lucide-react';
 import {
     DndContext,
@@ -632,6 +633,15 @@ const initialTools: Tool[] = [
         icon: Binary,
         color: 'from-indigo-500 to-violet-400',
         glowColor: '#8b5cf6',
+        category: 'utilities',
+    },
+    {
+        id: 'screenshot-generator',
+        title: 'App Screenshot Generator',
+        description: 'Create App Store & Play Store screenshots',
+        icon: Smartphone,
+        color: 'from-sky-500 to-blue-400',
+        glowColor: '#0ea5e9',
         category: 'utilities',
     },
 ];
