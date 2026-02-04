@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { ViewMode } from '../types';
 import {
@@ -95,15 +95,32 @@ const categories: Category[] = [
     },
 ];
 
+// Memoized Background Component
+const DashboardBackground = React.memo(() => (
+    <>
+        <div className="fixed inset-0 -z-10 overflow-hidden">
+            <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-500/15 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '8s' }} />
+            <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/15 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/10 rounded-full blur-[180px] animate-pulse" style={{ animationDuration: '12s', animationDelay: '1s' }} />
+        </div>
+        <div className="fixed inset-0 -z-10 opacity-[0.012]" style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+            backgroundSize: '64px 64px'
+        }} />
+    </>
+));
+
+DashboardBackground.displayName = 'DashboardBackground';
+
 // Sortable Tool Tile Component with glassmorphism
-const SortableTile: React.FC<{
+const SortableTile = React.memo<{
     tool: Tool;
     onTileClick: (id: string, rect: DOMRect) => void;
     shouldAnimate: boolean;
     index: number;
     isHidden?: boolean;
     isDragOverlay?: boolean;
-}> = ({ tool, onTileClick, shouldAnimate, index, isHidden, isDragOverlay }) => {
+}>(({ tool, onTileClick, shouldAnimate, index, isHidden, isDragOverlay }) => {
     const {
         attributes,
         listeners,
@@ -122,18 +139,21 @@ const SortableTile: React.FC<{
 
     const Icon = tool.icon;
 
+    // Use a callback for the click handler to prevent inline function creation
+    const handleClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+        if (!isDragging) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            onTileClick(tool.id, rect);
+        }
+    }, [isDragging, onTileClick, tool.id]);
+
     return (
         <button
             ref={setNodeRef}
             style={{ ...style, ...(shouldAnimate ? { animationDelay: `${index * 0.05}s` } : {}) }}
             {...attributes}
             {...listeners}
-            onClick={(e) => {
-                if (!isDragging) {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    onTileClick(tool.id, rect);
-                }
-            }}
+            onClick={handleClick}
             className={`
                 group relative flex flex-col p-5 h-full min-h-[180px]
                 rounded-3xl
@@ -216,7 +236,9 @@ const SortableTile: React.FC<{
             </div>
         </button>
     );
-};
+});
+
+SortableTile.displayName = 'SortableTile';
 
 // Drag Overlay Tile
 function DragOverlayTile({ tool }: { tool: Tool }) {
@@ -282,7 +304,7 @@ function DragOverlayTile({ tool }: { tool: Tool }) {
 }
 
 // Category Section Component with DnD
-const CategorySection: React.FC<{
+const CategorySection = React.memo<{
     category: Category;
     tools: Tool[];
     onTileClick: (id: string, rect: DOMRect) => void;
@@ -293,9 +315,15 @@ const CategorySection: React.FC<{
     onDragStart: (event: DragStartEvent) => void;
     onDragEnd: (event: DragEndEvent, categoryId: string) => void;
     sensors: ReturnType<typeof useSensors>;
-}> = ({ category, tools, onTileClick, shouldAnimate, expandingId, baseIndex, activeId, onDragStart, onDragEnd, sensors }) => {
+}>(({ category, tools, onTileClick, shouldAnimate, expandingId, baseIndex, activeId, onDragStart, onDragEnd, sensors }) => {
     const CategoryIcon = category.icon;
-    const activeTool = activeId ? tools.find(t => t.id === activeId) : null;
+    const activeTool = useMemo(() => activeId ? tools.find(t => t.id === activeId) : null, [activeId, tools]);
+
+    const handleDragEndInternal = useCallback((e: DragEndEvent) => {
+        onDragEnd(e, category.id);
+    }, [onDragEnd, category.id]);
+
+    const itemIds = useMemo(() => tools.map(t => t.id), [tools]);
 
     return (
         <section
@@ -336,11 +364,11 @@ const CategorySection: React.FC<{
                 sensors={sensors}
                 collisionDetection={closestCenter}
                 onDragStart={onDragStart}
-                onDragEnd={(e) => onDragEnd(e, category.id)}
+                onDragEnd={handleDragEndInternal}
             >
                 <div className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     <SortableContext
-                        items={tools.map(t => t.id)}
+                        items={itemIds}
                         strategy={rectSortingStrategy}
                     >
                         {tools.map((tool, index) => (
@@ -370,7 +398,9 @@ const CategorySection: React.FC<{
             </DndContext>
         </section>
     );
-};
+});
+
+CategorySection.displayName = 'CategorySection';
 
 // Expanding tile animation overlay
 function ExpandingTileOverlay({ tool, initialRect }: { tool: Tool; initialRect: DOMRect }) {
@@ -675,20 +705,27 @@ export function Dashboard({ setView }: DashboardProps) {
         }
     }, [shouldAnimate]);
 
-    const handleTileClick = (id: string, rect: DOMRect) => {
-        if (activeId) return; // Don't navigate if dragging
+    const handleTileClick = useCallback((id: string, rect: DOMRect) => {
+        // We use functional update or ref if we needed valid activeId without dependency, 
+        // but activeId is state. However, we want to avoid re-creating this function 
+        // if we can. activeId changes only when dragging.
+        // But if we include activeId in dependency, it re-renders.
+        // Actually, if we are clicking, activeId should be null.
+        // Let's rely on the check inside.
+        if (activeId) return;
+
         setExpansionRect(rect);
         setExpandingId(id);
         setTimeout(() => {
             setView(id as ViewMode);
         }, 500);
-    };
+    }, [activeId, setView]); // activeId will likely be null when clicking.
 
-    const handleDragStart = (event: DragStartEvent) => {
+    const handleDragStart = useCallback((event: DragStartEvent) => {
         setActiveId(event.active.id as string);
-    };
+    }, []);
 
-    const handleDragEnd = (event: DragEndEvent, categoryId: string) => {
+    const handleDragEnd = useCallback((event: DragEndEvent, categoryId: string) => {
         const { active, over } = event;
         if (over && active.id !== over.id) {
             setToolsByCategory(prev => {
@@ -704,24 +741,13 @@ export function Dashboard({ setView }: DashboardProps) {
             });
         }
         setActiveId(null);
-    };
+    }, []);
 
     let cumulativeIndex = 0;
 
     return (
         <div className={`relative w-full min-h-screen flex flex-col items-center text-white font-sans transition-opacity duration-500 ${expandingId ? 'opacity-0' : ''}`}>
-            {/* Animated background gradients */}
-            <div className="fixed inset-0 -z-10 overflow-hidden">
-                <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-purple-500/15 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '8s' }} />
-                <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-blue-500/15 rounded-full blur-[150px] animate-pulse" style={{ animationDuration: '10s', animationDelay: '2s' }} />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/10 rounded-full blur-[180px] animate-pulse" style={{ animationDuration: '12s', animationDelay: '1s' }} />
-            </div>
-
-            {/* Subtle grid pattern */}
-            <div className="fixed inset-0 -z-10 opacity-[0.012]" style={{
-                backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-                backgroundSize: '64px 64px'
-            }} />
+            <DashboardBackground />
 
             <div className="relative z-10 w-full p-4 md:p-8 lg:p-12 pt-12 md:pt-16">
                 {/* Premium Header */}
