@@ -477,8 +477,8 @@ export function ScreenshotGeneratorView({ onBack }: ScreenshotGeneratorViewProps
                     });
 
                     results.push({
-                        screenshot,
-                        device,
+                        deviceId: device.id,
+                        screenshotId: screenshot.id,
                         blob,
                         filename: `${device.id}_screenshot_${screenshot.order + 1}.${exportConfig.format}`
                     });
@@ -1045,6 +1045,91 @@ export function ScreenshotGeneratorView({ onBack }: ScreenshotGeneratorViewProps
                                     />
                                 </div>
 
+                                {/* Rotation */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-slate-400">Rotation</span>
+                                        <span className="text-xs text-slate-500">{Math.round(layoutConfig.rotation || 0)}°</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="-45"
+                                        max="45"
+                                        step="1"
+                                        value={layoutConfig.rotation || 0}
+                                        onChange={e => setLayoutConfig(prev => ({ ...prev, rotation: Number(e.target.value) }))}
+                                        className="w-full"
+                                    />
+                                </div>
+
+                                {/* Flip Controls */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-slate-400">Flip Horizontal</span>
+                                            <span className="text-xs text-slate-500">{layoutConfig.flipX || 1}</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="-1"
+                                            max="1"
+                                            step="0.1"
+                                            value={layoutConfig.flipX !== undefined ? layoutConfig.flipX : 1}
+                                            onChange={e => setLayoutConfig(prev => ({ ...prev, flipX: Number(e.target.value) }))}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-slate-400">Flip Vertical</span>
+                                            <span className="text-xs text-slate-500">{layoutConfig.flipY || 1}</span>
+                                        </div>
+                                        <input
+                                            type="range"
+                                            min="-1"
+                                            max="1"
+                                            step="0.1"
+                                            value={layoutConfig.flipY !== undefined ? layoutConfig.flipY : 1}
+                                            onChange={e => setLayoutConfig(prev => ({ ...prev, flipY: Number(e.target.value) }))}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Shadow Intensity */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-slate-400">Shadow Opacity</span>
+                                        <span className="text-xs text-slate-500">{Math.round((layoutConfig.shadowIntensity || 0.4) * 100)}%</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.05"
+                                        value={layoutConfig.shadowIntensity !== undefined ? layoutConfig.shadowIntensity : 0.4}
+                                        onChange={e => setLayoutConfig(prev => ({ ...prev, shadowIntensity: Number(e.target.value) }))}
+                                        className="w-full"
+                                    />
+                                </div>
+
+                                {/* Shadow Blur */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs text-slate-400">Shadow Blur</span>
+                                        <span className="text-xs text-slate-500">{Math.round(layoutConfig.shadowBlur || 60)}px</span>
+                                    </div>
+                                    <input
+                                        type="range"
+                                        min="0"
+                                        max="120"
+                                        step="5"
+                                        value={layoutConfig.shadowBlur !== undefined ? layoutConfig.shadowBlur : 60}
+                                        onChange={e => setLayoutConfig(prev => ({ ...prev, shadowBlur: Number(e.target.value) }))}
+                                        className="w-full"
+                                    />
+                                </div>
+
                                 {/* Frame Toggle */}
                                 <label
                                     className="flex items-center justify-between p-3 rounded-xl bg-white/5 dark:bg-slate-800/30 cursor-pointer hover:bg-white/10 transition-colors"
@@ -1139,6 +1224,113 @@ export function ScreenshotGeneratorView({ onBack }: ScreenshotGeneratorViewProps
                                                 {align}
                                             </button>
                                         ))}
+                                    </div>
+                                </div>
+
+                                {/* Advanced Text Settings */}
+                                <div className="border-t border-slate-700/50 pt-4 mt-2 space-y-4">
+                                    <span className="text-xs text-slate-500 uppercase tracking-wider">Advanced Typography</span>
+
+                                    {/* Font Family */}
+                                    <div className="space-y-2">
+                                        <span className="text-xs text-slate-400">Font Family</span>
+                                        <select
+                                            value={textOverlay.fontFamily}
+                                            onChange={e => setTextOverlay(prev => ({ ...prev, fontFamily: e.target.value }))}
+                                            className="w-full px-3 py-2 rounded-xl bg-white/5 dark:bg-slate-800/50 border border-white/10 dark:border-slate-700/50 text-sm text-slate-200 focus:outline-none"
+                                        >
+                                            <option value='system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'>System Default</option>
+                                            <option value='Inter, sans-serif'>Inter</option>
+                                            <option value='Roboto, sans-serif'>Roboto</option>
+                                            <option value='"Helvetica Neue", Helvetica, Arial, sans-serif'>Helvetica Neue</option>
+                                            <option value='Georgia, serif'>Georgia (Serif)</option>
+                                            <option value='"Playfair Display", serif'>Playfair (Display)</option>
+                                            <option value='Monaco, monospace'>Monospace</option>
+                                        </select>
+                                    </div>
+
+                                    {/* Font Weight */}
+                                    <div className="space-y-2">
+                                        <span className="text-xs text-slate-400">Title Weight</span>
+                                        <div className="flex gap-2">
+                                            {(['normal', 'bold', '800'] as const).map(weight => (
+                                                <button
+                                                    key={weight}
+                                                    onClick={() => setTextOverlay(prev => ({ ...prev, fontWeight: weight }))}
+                                                    className={`flex-1 py-1.5 rounded-lg text-xs capitalize transition-all ${textOverlay.fontWeight === weight
+                                                        ? 'bg-blue-500 text-white'
+                                                        : 'bg-white/5 dark:bg-slate-800/50 text-slate-400 hover:text-slate-200'
+                                                        }`}
+                                                >
+                                                    {weight === '800' ? 'Extra' : weight}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Text Shadow Toggle */}
+                                    <label
+                                        className="flex items-center justify-between p-2 rounded-lg bg-white/5 dark:bg-slate-800/30 cursor-pointer hover:bg-white/10 transition-colors"
+                                        onClick={() => setTextOverlay(prev => ({ ...prev, textShadow: !prev.textShadow }))}
+                                    >
+                                        <span className="text-sm text-slate-300">Text Shadow</span>
+                                        <div className={`relative w-8 h-5 rounded-full transition-colors ${textOverlay.textShadow ? 'bg-blue-500' : 'bg-slate-600'}`}>
+                                            <div className={`absolute top-1 w-3 h-3 rounded-full bg-white shadow transition-transform ${textOverlay.textShadow ? 'translate-x-4' : 'translate-x-1'}`} />
+                                        </div>
+                                    </label>
+
+                                    {/* Title Position */}
+                                    <div className="space-y-2">
+                                        <span className="text-xs text-slate-400">Title Position (X / Y)</span>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <input
+                                                type="range"
+                                                min="-200"
+                                                max="200"
+                                                step="10"
+                                                value={textOverlay.titleXOffset || 0}
+                                                onChange={e => setTextOverlay(prev => ({ ...prev, titleXOffset: Number(e.target.value) }))}
+                                                className="w-full"
+                                                title="Title X Offset"
+                                            />
+                                            <input
+                                                type="range"
+                                                min="-200"
+                                                max="200"
+                                                step="10"
+                                                value={textOverlay.titleYOffset || 0}
+                                                onChange={e => setTextOverlay(prev => ({ ...prev, titleYOffset: Number(e.target.value) }))}
+                                                className="w-full"
+                                                title="Title Y Offset"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* Subtitle Position */}
+                                    <div className="space-y-2">
+                                        <span className="text-xs text-slate-400">Subtitle Position (X / Y)</span>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <input
+                                                type="range"
+                                                min="-200"
+                                                max="200"
+                                                step="10"
+                                                value={textOverlay.subtitleXOffset || 0}
+                                                onChange={e => setTextOverlay(prev => ({ ...prev, subtitleXOffset: Number(e.target.value) }))}
+                                                className="w-full"
+                                                title="Subtitle X Offset"
+                                            />
+                                            <input
+                                                type="range"
+                                                min="-200"
+                                                max="200"
+                                                step="10"
+                                                value={textOverlay.subtitleYOffset || 0}
+                                                onChange={e => setTextOverlay(prev => ({ ...prev, subtitleYOffset: Number(e.target.value) }))}
+                                                className="w-full"
+                                                title="Subtitle Y Offset"
+                                            />
+                                        </div>
                                     </div>
                                 </div>
                             </div>

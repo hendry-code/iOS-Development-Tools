@@ -50,7 +50,13 @@ export interface TextOverlayConfig {
     titleColor: string;
     subtitleColor: string;
     fontFamily: string;
+    fontWeight: 'normal' | 'bold' | '800';
     alignment: 'left' | 'center' | 'right';
+    titleXOffset: number;
+    titleYOffset: number;
+    subtitleXOffset: number;
+    subtitleYOffset: number;
+    textShadow: boolean;
 }
 
 export interface ExportConfig {
@@ -64,14 +70,24 @@ export interface LayoutConfig {
     scale: number;      // 0.1 to 1.5 (10% to 150%)
     offsetX: number;    // Horizontal offset as percentage of canvas width (-0.5 to 0.5)
     offsetY: number;    // Vertical offset as percentage of canvas height (-0.5 to 0.5)
+    rotation: number;   // Rotation in degrees (-45 to 45)
     showFrame: boolean; // Whether to show device frame
+    shadowIntensity: number; // 0 to 1
+    shadowBlur: number; // 0 to 100
+    flipX: number; // -1 to 1 (default 1)
+    flipY: number; // -1 to 1 (default 1)
 }
 
 export const DEFAULT_LAYOUT_CONFIG: LayoutConfig = {
     scale: 0.85,
     offsetX: 0,
     offsetY: 0.05,
+    rotation: 0,
     showFrame: true,
+    shadowIntensity: 0.4,
+    shadowBlur: 60,
+    flipX: 1,
+    flipY: 1,
 };
 
 export interface ScreenshotProject {
@@ -332,21 +348,37 @@ export function addTextOverlay(
             ? canvasWidth - 80
             : canvasWidth / 2;
 
+    if (config.textShadow) {
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+        ctx.shadowBlur = 20;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 4;
+    } else {
+        ctx.shadowColor = 'transparent';
+    }
+
     // Title (above device)
     if (config.title) {
-        ctx.font = `bold ${config.titleFontSize}px ${config.fontFamily}`;
+        ctx.font = `${config.fontWeight} ${config.titleFontSize}px ${config.fontFamily}`;
         ctx.fillStyle = config.titleColor;
-        const titleY = deviceBounds.top - 60;
-        ctx.fillText(config.title, xPos, titleY);
+        const titleX = xPos + (config.titleXOffset || 0);
+        const titleY = deviceBounds.top - 60 + (config.titleYOffset || 0);
+        ctx.fillText(config.title, titleX, titleY);
     }
 
     // Subtitle (below device)
     if (config.subtitle) {
-        ctx.font = `${config.subtitleFontSize}px ${config.fontFamily}`;
+        // Subtitle usually lighter weight than title
+        const subWeight = config.fontWeight === '800' ? 'bold' : 'normal';
+        ctx.font = `${subWeight} ${config.subtitleFontSize}px ${config.fontFamily}`;
         ctx.fillStyle = config.subtitleColor;
-        const subtitleY = deviceBounds.bottom + 80;
-        ctx.fillText(config.subtitle, xPos, subtitleY);
+        const subtitleX = xPos + (config.subtitleXOffset || 0);
+        const subtitleY = deviceBounds.bottom + 80 + (config.subtitleYOffset || 0);
+        ctx.fillText(config.subtitle, subtitleX, subtitleY);
     }
+
+    // Reset shadow
+    ctx.shadowColor = 'transparent';
 }
 
 /**
@@ -388,22 +420,26 @@ export function resizeScreenshotToDevice(
 export function createDeviceFrame(
     screenshotCanvas: HTMLCanvasElement,
     device: DeviceSpec,
-    showFrame: boolean = true
+    layout: LayoutConfig
 ): HTMLCanvasElement {
+    const showFrame = layout.showFrame;
     // Add padding for frame and shadow
     const framePadding = showFrame ? 40 : 0;
-    const shadowBlur = showFrame ? 60 : 0;
+    // Ensure padding handles shadow adequately but here we simplify
+    const shadowPadding = showFrame ? Math.max(0, layout.shadowBlur || 0) : 0;
+
+    // Total margin to accommodate shadow
+    const margin = Math.max(framePadding, shadowPadding);
 
     const canvas = document.createElement('canvas');
-    canvas.width = screenshotCanvas.width + framePadding * 2;
-    canvas.height = screenshotCanvas.height + framePadding * 2;
+    canvas.width = screenshotCanvas.width + margin * 2;
+    canvas.height = screenshotCanvas.height + margin * 2;
     const ctx = canvas.getContext('2d');
     if (!ctx) throw new Error('Could not get canvas context');
 
     if (showFrame) {
-        // Draw shadow
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
-        ctx.shadowBlur = shadowBlur;
+        ctx.shadowColor = `rgba(0, 0, 0, ${layout.shadowIntensity !== undefined ? layout.shadowIntensity : 0.4})`;
+        ctx.shadowBlur = layout.shadowBlur !== undefined ? layout.shadowBlur : 60;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 20;
     }
@@ -414,8 +450,8 @@ export function createDeviceFrame(
         : Math.min(screenshotCanvas.width, screenshotCanvas.height) * 0.04;
 
     // Draw rounded rectangle path
-    const x = framePadding;
-    const y = framePadding;
+    const x = margin;
+    const y = margin;
     const w = screenshotCanvas.width;
     const h = screenshotCanvas.height;
 
@@ -431,15 +467,22 @@ export function createDeviceFrame(
     ctx.quadraticCurveTo(x, y, x + cornerRadius, y);
     ctx.closePath();
 
+    // Fill to cast shadow
+    if (showFrame) {
+        ctx.fillStyle = '#000000';
+        ctx.fill();
+        // Reset shadow for subsequent drawing
+        ctx.shadowColor = 'transparent';
+    }
+
     // Clip and draw
     ctx.save();
     ctx.clip();
-    ctx.drawImage(screenshotCanvas, framePadding, framePadding);
+    ctx.drawImage(screenshotCanvas, margin, margin);
     ctx.restore();
 
     // Draw frame border if enabled
     if (showFrame) {
-        ctx.shadowColor = 'transparent';
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
         ctx.lineWidth = 2;
         ctx.stroke();
@@ -468,13 +511,14 @@ export async function composeScreenshot(
         device.height
     );
 
-    // Create device frame
-    const framedDevice = createDeviceFrame(resizedScreenshot, device, layout.showFrame);
+    // Create device frame with shadow settings from layout
+    const framedDevice = createDeviceFrame(resizedScreenshot, device, layout);
 
     // Calculate final canvas size with margins for text
     const textMarginTop = textOverlay.title ? 200 : 100;
     const textMarginBottom = textOverlay.subtitle ? 200 : 100;
-    const canvasWidth = framedDevice.width + 200; // Side margins
+    // Add extra width for rotation if needed (simplified)
+    const canvasWidth = framedDevice.width + 400;
     const canvasHeight = framedDevice.height + textMarginTop + textMarginBottom;
 
     // Create background (now async for image support)
@@ -492,16 +536,26 @@ export async function composeScreenshot(
     const offsetXpx = layout.offsetX * canvasWidth;
     const offsetYpx = layout.offsetY * canvasHeight;
 
-    const deviceX = centerX - scaledWidth / 2 + offsetXpx;
-    const deviceY = centerY - scaledHeight / 2 + offsetYpx;
+    const deviceX = centerX + offsetXpx;
+    const deviceY = centerY + offsetYpx;
 
-    // Draw framed device on background with scale
-    ctx.drawImage(framedDevice, deviceX, deviceY, scaledWidth, scaledHeight);
+    ctx.save();
+    // Translate to center of device
+    ctx.translate(deviceX, deviceY);
+    // Rotate
+    ctx.rotate((layout.rotation || 0) * Math.PI / 180);
+    // Apply Flip (Scale)
+    ctx.scale(layout.flipX !== undefined ? layout.flipX : 1, layout.flipY !== undefined ? layout.flipY : 1);
+
+    // Draw centered
+    ctx.drawImage(framedDevice, -scaledWidth / 2, -scaledHeight / 2, scaledWidth, scaledHeight);
+    ctx.restore();
 
     // Add text overlays
+    // Note: deviceBounds is approx for text placement relative to where device center is
     const deviceBounds = {
-        top: deviceY,
-        bottom: deviceY + scaledHeight,
+        top: deviceY - scaledHeight / 2,
+        bottom: deviceY + scaledHeight / 2,
     };
     addTextOverlay(ctx, canvasWidth, canvasHeight, textOverlay, deviceBounds);
 
@@ -676,7 +730,13 @@ export const DEFAULT_TEXT_OVERLAY: TextOverlayConfig = {
     titleColor: '#ffffff',
     subtitleColor: 'rgba(255, 255, 255, 0.8)',
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    fontWeight: 'bold',
     alignment: 'center',
+    titleYOffset: 0,
+    subtitleYOffset: 0,
+    titleXOffset: 0,
+    subtitleXOffset: 0,
+    textShadow: true,
 };
 
 export const DEFAULT_EXPORT_CONFIG: ExportConfig = {
