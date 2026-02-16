@@ -19,3 +19,6 @@ The **Extract Catalog** tool is designed to reverse-engineer String Catalogs (`.
 3. **Download**:
    - Use the individual **Download** buttons for specific files.
    - Or click **Download All (Zip)** to get everything in one package.
+
+### Quick Demo
+Click the **Execute Sample** button in the header to load a sample `.xcstrings` catalog with 6 keys across English, Spanish, and French (including plural examples). The tool will auto-extract, producing per-language `.strings` and Android XML files so you can see the full workflow instantly.

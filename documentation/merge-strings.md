@@ -16,3 +16,6 @@
    - Verify the language code for each uploaded file (e.g., `en`, `fr`).
 3. **Merge**: Click **Merge Files**.
 4. **Download**: Save the updated `.xcstrings` file.
+
+### Quick Demo
+Click the **Execute Sample** button in the header to load a sample `.xcstrings` catalog (4 English keys) along with German and Japanese `.strings` translation files. The tool will auto-merge them, producing an updated catalog with all three languages integrated.

@@ -31,3 +31,6 @@
 5. **Download**:
    - Review the output in the result panel.
    - Click **Download .xcstrings** to save the merged file.
+
+### Quick Demo
+Click the **Execute Sample** button in the header to load two sample `.xcstrings` catalogs (`AppStrings` and `SettingsStrings`). They share a conflicting `auth_login` key with different translations ("Sign In" vs "Log In"). The tool auto-resolves the conflict using Catalog A and merges all 5 unique keys into a single output with report stats.

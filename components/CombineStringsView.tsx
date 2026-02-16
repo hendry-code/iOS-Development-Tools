@@ -5,7 +5,7 @@ import {
   generateAllAndroidXml,
 } from '../services/converter';
 import { OutputFormat, LanguageFile } from '../types';
-import { Save, FolderOpen, Trash2, ArrowLeft, Combine, Plus, X, FileText, Upload, Download } from 'lucide-react';
+import { Save, FolderOpen, Trash2, ArrowLeft, Combine, Plus, X, FileText, Upload, Download, Sparkles } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 
 const PROJECT_STORAGE_KEY = 'stringsExporterProject_combine';
@@ -22,6 +22,55 @@ const guessLangCode = (fileName: string): string => {
   if (simpleMatch) return simpleMatch[0];
   return '';
 }
+
+// --- Sample Data ---
+const SAMPLE_FILES: LanguageFile[] = [
+  {
+    name: 'en.strings',
+    langCode: 'en',
+    content: [
+      '/* Common UI Strings */',
+      '"welcome_title" = "Welcome";',
+      '"login_button" = "Sign In";',
+      '"logout_button" = "Sign Out";',
+      '"settings_title" = "Settings";',
+      '"profile_name" = "Profile";',
+      '"save_button" = "Save Changes";',
+      '"cancel_button" = "Cancel";',
+      '"delete_confirm" = "Are you sure you want to delete?";',
+    ].join('\n'),
+  },
+  {
+    name: 'es.strings',
+    langCode: 'es',
+    content: [
+      '/* Common UI Strings */',
+      '"welcome_title" = "Bienvenido";',
+      '"login_button" = "Iniciar sesión";',
+      '"logout_button" = "Cerrar sesión";',
+      '"settings_title" = "Ajustes";',
+      '"profile_name" = "Perfil";',
+      '"save_button" = "Guardar cambios";',
+      '"cancel_button" = "Cancelar";',
+      '"delete_confirm" = "¿Estás seguro de que quieres eliminar?";',
+    ].join('\n'),
+  },
+  {
+    name: 'fr.strings',
+    langCode: 'fr',
+    content: [
+      '/* Common UI Strings */',
+      '"welcome_title" = "Bienvenue";',
+      '"login_button" = "Se connecter";',
+      '"logout_button" = "Se déconnecter";',
+      '"settings_title" = "Paramètres";',
+      '"profile_name" = "Profil";',
+      '"save_button" = "Enregistrer";',
+      '"cancel_button" = "Annuler";',
+      '"delete_confirm" = "Êtes-vous sûr de vouloir supprimer ?";',
+    ].join('\n'),
+  },
+];
 
 export const CombineStringsView: React.FC<CombineStringsViewProps> = ({ onBack }) => {
   const [languageFiles, setLanguageFiles] = useState<LanguageFile[]>([]);
@@ -171,6 +220,11 @@ export const CombineStringsView: React.FC<CombineStringsViewProps> = ({ onBack }
     setHasSavedProject(false);
   };
 
+  const handleExecuteSample = () => {
+    setLanguageFiles(SAMPLE_FILES);
+    handleConvert(SAMPLE_FILES);
+  };
+
   const handleDownload = (content: string, filename: string) => {
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
@@ -275,6 +329,14 @@ export const CombineStringsView: React.FC<CombineStringsViewProps> = ({ onBack }
           <p className="text-slate-400 text-sm">Merge multiple files into a catalog</p>
         </div>
         <div className="ml-auto flex items-center space-x-2">
+          <button
+            onClick={handleExecuteSample}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+            title="Load sample .strings files and auto-convert to see how it works"
+          >
+            <Sparkles size={16} />
+            <span className="hidden sm:inline">Execute Sample</span>
+          </button>
           <span className="text-xs text-green-400 font-medium transition-opacity duration-300 w-12 text-right">{saveStatus}</span>
           <button onClick={handleSaveProject} title="Save Project" className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"><Save size={18} /></button>
           <button onClick={handleLoadProject} disabled={!hasSavedProject} title="Load Project" className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><FolderOpen size={18} /></button>

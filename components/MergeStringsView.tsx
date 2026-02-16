@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, Upload, X, Save, Merge, FileText, Plus, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, X, Save, Merge, FileText, Plus, AlertCircle, Sparkles } from 'lucide-react';
 import { LanguageFile } from '../types';
 import { mergeStringsIntoCatalog } from '../services/converter';
 import { DragDropZone } from './DragDropZone';
@@ -29,6 +29,65 @@ const readFile = (file: File): Promise<LanguageFile> => {
         reader.readAsText(file);
     });
 };
+
+// --- Sample Data ---
+const SAMPLE_CATALOG: LanguageFile = {
+    name: 'Localizable.xcstrings',
+    content: JSON.stringify({
+        sourceLanguage: 'en',
+        strings: {
+            welcome_title: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Welcome' } },
+                },
+            },
+            save_button: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Save' } },
+                },
+            },
+            cancel_button: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Cancel' } },
+                },
+            },
+            settings_title: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Settings' } },
+                },
+            },
+        },
+        version: '1.0',
+    }, null, 2),
+    langCode: '',
+};
+
+const SAMPLE_TRANSLATIONS: LanguageFile[] = [
+    {
+        name: 'de.strings',
+        langCode: 'de',
+        content: [
+            '"welcome_title" = "Willkommen";',
+            '"save_button" = "Speichern";',
+            '"cancel_button" = "Abbrechen";',
+            '"settings_title" = "Einstellungen";',
+        ].join('\n'),
+    },
+    {
+        name: 'ja.strings',
+        langCode: 'ja',
+        content: [
+            '"welcome_title" = "\u3088\u3046\u3053\u305d";',
+            '"save_button" = "\u4fdd\u5b58";',
+            '"cancel_button" = "\u30ad\u30e3\u30f3\u30bb\u30eb";',
+            '"settings_title" = "\u8a2d\u5b9a";',
+        ].join('\n'),
+    },
+];
 
 export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) => {
     const [sourceCatalog, setSourceCatalog] = useState<LanguageFile | null>(null);
@@ -113,6 +172,24 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
         }, 500);
     };
 
+    const handleExecuteSample = () => {
+        setSourceCatalog(SAMPLE_CATALOG);
+        setStringsFiles(SAMPLE_TRANSLATIONS);
+        setError(null);
+        setIsLoading(true);
+
+        setTimeout(() => {
+            try {
+                const result = mergeStringsIntoCatalog(SAMPLE_CATALOG.content, SAMPLE_TRANSLATIONS);
+                setMergedOutput(result);
+            } catch (e: any) {
+                setError(e.message || 'An error occurred during the merge.');
+            } finally {
+                setIsLoading(false);
+            }
+        }, 300);
+    };
+
     const handleDownload = () => {
         if (!mergedOutput) return;
         const blob = new Blob([mergedOutput], { type: 'application/json' });
@@ -142,6 +219,16 @@ export const MergeStringsView: React.FC<MergeStringsViewProps> = ({ onBack }) =>
                         Merge Strings
                     </h1>
                     <p className="text-slate-400 text-sm">Merge .strings translations into .xcstrings catalog</p>
+                </div>
+                <div className="ml-auto">
+                    <button
+                        onClick={handleExecuteSample}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                        title="Load a sample catalog and translation files, then auto-merge to see how it works"
+                    >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline">Execute Sample</span>
+                    </button>
                 </div>
             </div>
 

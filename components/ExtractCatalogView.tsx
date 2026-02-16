@@ -5,7 +5,7 @@ import {
   generateAllAndroidXml,
 } from '../services/converter';
 import { OutputFormat, LanguageFile } from '../types';
-import { Save, FolderOpen, Trash2, ArrowLeft, FileOutput, X, Download } from 'lucide-react';
+import { Save, FolderOpen, Trash2, ArrowLeft, FileOutput, X, Download, Sparkles } from 'lucide-react';
 import JSZip from 'jszip';
 import { DragDropZone } from './DragDropZone';
 
@@ -14,6 +14,75 @@ const PROJECT_STORAGE_KEY = 'stringsExporterProject_extract';
 interface ExtractCatalogViewProps {
   onBack: () => void;
 }
+
+// --- Sample Data ---
+const SAMPLE_XCSTRINGS = JSON.stringify({
+  sourceLanguage: 'en',
+  strings: {
+    welcome_title: {
+      extractionState: 'manual',
+      localizations: {
+        en: { stringUnit: { state: 'translated', value: 'Welcome' } },
+        es: { stringUnit: { state: 'translated', value: 'Bienvenido' } },
+        fr: { stringUnit: { state: 'translated', value: 'Bienvenue' } },
+      },
+    },
+    login_button: {
+      extractionState: 'manual',
+      localizations: {
+        en: { stringUnit: { state: 'translated', value: 'Sign In' } },
+        es: { stringUnit: { state: 'translated', value: 'Iniciar sesi\u00f3n' } },
+        fr: { stringUnit: { state: 'translated', value: 'Se connecter' } },
+      },
+    },
+    logout_button: {
+      extractionState: 'manual',
+      localizations: {
+        en: { stringUnit: { state: 'translated', value: 'Sign Out' } },
+        es: { stringUnit: { state: 'translated', value: 'Cerrar sesi\u00f3n' } },
+        fr: { stringUnit: { state: 'translated', value: 'Se d\u00e9connecter' } },
+      },
+    },
+    settings_title: {
+      extractionState: 'manual',
+      localizations: {
+        en: { stringUnit: { state: 'translated', value: 'Settings' } },
+        es: { stringUnit: { state: 'translated', value: 'Ajustes' } },
+        fr: { stringUnit: { state: 'translated', value: 'Param\u00e8tres' } },
+      },
+    },
+    delete_confirm: {
+      extractionState: 'manual',
+      localizations: {
+        en: { stringUnit: { state: 'translated', value: 'Are you sure you want to delete?' } },
+        es: { stringUnit: { state: 'translated', value: '\u00bfEst\u00e1s seguro de que quieres eliminar?' } },
+        fr: { stringUnit: { state: 'translated', value: '\u00cates-vous s\u00fbr de vouloir supprimer ?' } },
+      },
+    },
+    items_count: {
+      extractionState: 'manual',
+      localizations: {
+        en: {
+          variations: {
+            plural: {
+              one: { stringUnit: { state: 'translated', value: '%d item' } },
+              other: { stringUnit: { state: 'translated', value: '%d items' } },
+            },
+          },
+        },
+        es: {
+          variations: {
+            plural: {
+              one: { stringUnit: { state: 'translated', value: '%d elemento' } },
+              other: { stringUnit: { state: 'translated', value: '%d elementos' } },
+            },
+          },
+        },
+      },
+    },
+  },
+  version: '1.0',
+}, null, 2);
 
 export const ExtractCatalogView: React.FC<ExtractCatalogViewProps> = ({ onBack }) => {
   const [catalogFile, setCatalogFile] = useState<LanguageFile | null>(null);
@@ -102,6 +171,15 @@ export const ExtractCatalogView: React.FC<ExtractCatalogViewProps> = ({ onBack }
     setActiveTab(OutputFormat.IOS);
     setError(null);
     setHasSavedProject(false);
+  };
+
+  const handleExecuteSample = () => {
+    const sampleFile: LanguageFile = {
+      name: 'SampleCatalog.xcstrings',
+      content: SAMPLE_XCSTRINGS,
+      langCode: '',
+    };
+    handleCatalogFileChange(sampleFile);
   };
 
 
@@ -249,6 +327,14 @@ export const ExtractCatalogView: React.FC<ExtractCatalogViewProps> = ({ onBack }
           <p className="text-slate-400 text-sm">Extract strings from .xcstrings to legacy formats</p>
         </div>
         <div className="ml-auto flex items-center space-x-2">
+          <button
+            onClick={handleExecuteSample}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+            title="Load a sample .xcstrings catalog and auto-extract to see how it works"
+          >
+            <Sparkles size={16} />
+            <span className="hidden sm:inline">Execute Sample</span>
+          </button>
           <span className="text-xs text-emerald-400 font-medium transition-opacity duration-300 w-12 text-right">{saveStatus}</span>
           <button onClick={handleSaveProject} title="Save Project" className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"><Save size={18} /></button>
           <button onClick={handleLoadProject} disabled={!hasSavedProject} title="Load Project" className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed"><FolderOpen size={18} /></button>

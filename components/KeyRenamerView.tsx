@@ -25,6 +25,49 @@ const readFile = (file: File): Promise<LoadedFile> => {
     });
 };
 
+// --- Sample Data ---
+const SAMPLE_SOURCE: LoadedFile = {
+    name: 'albanian.strings',
+    content: [
+        '"login_btn" = "Identifikohu";',
+        '"logout_btn" = "Dil";',
+        '"welcome_msg" = "Mirësevini në aplikacion";',
+        '"settings_lbl" = "Cilësimet";',
+        '"profile_lbl" = "Profili";',
+        '"save_btn" = "Ruaj ndryshimet";',
+        '"cancel_btn" = "Anulo";',
+        '"delete_msg" = "A jeni i sigurt që dëshironi ta fshini?";',
+    ].join('\n'),
+};
+
+const SAMPLE_KEY_COMP: LoadedFile = {
+    name: 'OldLocalizable.strings',
+    content: [
+        '"login_btn" = "Log In";',
+        '"logout_btn" = "Log Out";',
+        '"welcome_msg" = "Welcome to the app";',
+        '"settings_lbl" = "Settings";',
+        '"profile_lbl" = "Profile";',
+        '"save_btn" = "Save Changes";',
+        '"cancel_btn" = "Cancel";',
+        '"delete_msg" = "Are you sure you want to delete?";',
+    ].join('\n'),
+};
+
+const SAMPLE_VAL_COMP: LoadedFile = {
+    name: 'NewLocalizable.strings',
+    content: [
+        '"auth_login_button" = "Log In";',
+        '"auth_logout_button" = "Log Out";',
+        '"home_welcome_title" = "Welcome to the app";',
+        '"settings_title" = "Settings";',
+        '"profile_name" = "Profile";',
+        '"action_save" = "Save Changes";',
+        '"action_cancel" = "Cancel";',
+        '"alert_delete_confirm" = "Are you sure you want to delete?";',
+    ].join('\n'),
+};
+
 export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
     const [sourceFile, setSourceFile] = useState<LoadedFile | null>(null);
     const [keyCompFile, setKeyCompFile] = useState<LoadedFile | null>(null);
@@ -117,6 +160,58 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
         setOutputContent('');
         setRenameLog([]);
         setError(null);
+    };
+
+    const handleExecuteSample = () => {
+        // Set UI state for display
+        setSourceFile(SAMPLE_SOURCE);
+        setKeyCompFile(SAMPLE_KEY_COMP);
+        setValCompFiles([SAMPLE_VAL_COMP]);
+        setError(null);
+        setIsLoading(true);
+        setRenameLog([]);
+
+        setTimeout(() => {
+            try {
+                const sourceData = parseStringsFile(SAMPLE_SOURCE.content);
+                const keyCompData = parseStringsFile(SAMPLE_KEY_COMP.content);
+                const valCompDatas = [parseStringsFile(SAMPLE_VAL_COMP.content)];
+
+                const logs: string[] = [];
+                const newSourceData: ParsedStrings = {};
+                const escape = (str: string) => str.replace(/"/g, '\\"').replace(/\n/g, '\\n');
+
+                Object.entries(sourceData).forEach(([srcKey, srcValue]) => {
+                    const intermediateValue = keyCompData[srcKey];
+                    let newKey = srcKey;
+                    let foundMatch = false;
+
+                    if (intermediateValue && typeof intermediateValue === 'string') {
+                        for (const valCompData of valCompDatas) {
+                            const foundEntry = Object.entries(valCompData).find(([_, val]) => val === intermediateValue);
+                            if (foundEntry) {
+                                newKey = foundEntry[0];
+                                foundMatch = true;
+                                logs.push(`Renamed "${srcKey}" -> "${newKey}" (via value: "${(intermediateValue as string).substring(0, 30)}${(intermediateValue as string).length > 30 ? '...' : ''}")`);
+                                break;
+                            }
+                        }
+                    }
+                    newSourceData[newKey] = srcValue;
+                });
+
+                const generatedContent = Object.entries(newSourceData)
+                    .map(([key, value]) => `"${key}" = "${escape(value as string)}";`)
+                    .join('\n');
+
+                setOutputContent(generatedContent);
+                setRenameLog(logs.length > 0 ? logs : ['No keys were renamed based on the provided files.']);
+            } catch (err: any) {
+                setError(`An error occurred during processing: ${err.message}`);
+            } finally {
+                setIsLoading(false);
+            }
+        }, 300);
     };
 
     const processRenaming = () => {
@@ -219,12 +314,22 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                     </h1>
                     <p className="text-slate-400 text-sm">Batch rename keys across files</p>
                 </div>
-                {/* Clear All Button */}
-                {(sourceFile || keyCompFile || valCompFiles.length > 0) && (
-                    <button onClick={handleClearAll} className="ml-auto p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors">
-                        <Trash2 size={20} />
+                {/* Header Actions */}
+                <div className="ml-auto flex items-center space-x-2">
+                    <button
+                        onClick={handleExecuteSample}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                        title="Load sample files and auto-process to see how key renaming works"
+                    >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline">Execute Sample</span>
                     </button>
-                )}
+                    {(sourceFile || keyCompFile || valCompFiles.length > 0) && (
+                        <button onClick={handleClearAll} className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors">
+                            <Trash2 size={20} />
+                        </button>
+                    )}
+                </div>
             </header>
 
             <div className="flex-1 flex flex-col md:flex-row md:overflow-hidden">

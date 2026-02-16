@@ -17,3 +17,6 @@ The tool uses three inputs:
 3.  **Step 3: Upload Value-Comp**: Upload the new English file (or files) that contains the new keys.
 4.  **Process**: Click **Process Renaming**. The tool will try to match values to find the new keys for your source translations.
 5.  **Review & Download**: Check the logs to see which keys were renamed and download the result.
+
+### Quick Demo
+Click the **Execute Sample** button in the header to load sample files demonstrating the full key renaming workflow. It loads an Albanian translation file with old keys (e.g., `login_btn`), an old English key-comparable, and a new English value-comparable with renamed keys (e.g., `auth_login_button`). All 8 keys get renamed automatically, and the Change Log shows each mapping.

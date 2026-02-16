@@ -19,3 +19,6 @@ The **Script Runner** is an advanced developer tool that allows you to execute c
    - Use the **API Help** menu to see available variables and copy snippets.
 3. **Run**: Click **Run Script** to execute.
 4. **Output**: View logs and results in the bottom "Output" panel.
+
+### Quick Demo
+Click the **Execute Sample** button in the header to instantly load a sample JSON source file and a demo script. The script will auto-execute, giving you a working example of how the tool processes files, logs output, and returns results.

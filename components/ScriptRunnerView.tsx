@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import Editor from '@monaco-editor/react';
-import { ArrowLeft, Play, Upload, Trash2, Copy, FileText, Terminal, Code2, File, Info, X, Check } from 'lucide-react';
+import { ArrowLeft, Play, Upload, Trash2, Copy, FileText, Terminal, Code2, File, Info, X, Check, Sparkles } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 import { ResizableLayout } from './ResizableLayout';
 import { VerticalSplitPane } from './VerticalSplitPane';
@@ -23,6 +23,58 @@ declare global {
     }
 }
 
+// --- Sample Data ---
+const SAMPLE_SOURCE_FILE = {
+    name: 'sample_apps.json',
+    content: JSON.stringify([
+        { name: 'PhotoSync Pro', version: '3.2.1', platform: 'iOS', downloads: 142500, rating: 4.7 },
+        { name: 'TaskFlow', version: '1.8.0', platform: 'iOS', downloads: 89300, rating: 4.5 },
+        { name: 'BudgetWise', version: '2.0.4', platform: 'iPadOS', downloads: 51200, rating: 4.2 },
+        { name: 'FitTrack Elite', version: '5.1.0', platform: 'iOS', downloads: 230000, rating: 4.9 },
+        { name: 'NoteVault', version: '1.3.2', platform: 'macOS', downloads: 34800, rating: 4.0 }
+    ], null, 2),
+    size: 0, // will be calculated
+    type: 'json'
+};
+SAMPLE_SOURCE_FILE.size = new Blob([SAMPLE_SOURCE_FILE.content]).size;
+
+const SAMPLE_SCRIPT = `// 📊 App Analytics Report
+// This script demonstrates how to read uploaded files,
+// parse JSON data, and produce a formatted report.
+
+const file = files[0];
+const apps = JSON.parse(file.content);
+
+console.log("📁 Processing: " + file.name);
+console.log("   Found " + apps.length + " apps\\n");
+
+// Calculate stats
+const totalDownloads = apps.reduce((sum, a) => sum + a.downloads, 0);
+const avgRating = (apps.reduce((sum, a) => sum + a.rating, 0) / apps.length).toFixed(1);
+const topApp = apps.reduce((best, a) => a.downloads > best.downloads ? a : best);
+
+console.log("📈 Total Downloads: " + totalDownloads.toLocaleString());
+console.log("⭐ Average Rating:  " + avgRating);
+console.log("🏆 Top App:         " + topApp.name + " (" + topApp.downloads.toLocaleString() + " downloads)");
+console.log("");
+
+// Per-app breakdown
+apps.sort((a, b) => b.downloads - a.downloads);
+apps.forEach((app, i) => {
+    const bar = "█".repeat(Math.round(app.downloads / totalDownloads * 30));
+    console.log((i + 1) + ". " + app.name.padEnd(16) + " v" + app.version + "  ⭐" + app.rating + "  " + bar + " " + app.downloads.toLocaleString());
+});
+
+// Return a summary object
+return {
+    file: file.name,
+    totalApps: apps.length,
+    totalDownloads,
+    averageRating: parseFloat(avgRating),
+    topApp: topApp.name
+};
+`;
+
 export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) => {
     const [files, setFiles] = useState<ScriptFile[]>([]);
     const [script, setScript] = useState<string>('');
@@ -33,6 +85,8 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
     const [language, setLanguage] = useState<'javascript' | 'python'>('javascript');
     const [isPyodideLoading, setIsPyodideLoading] = useState(false);
     const [pyodide, setPyodide] = useState<any>(null);
+
+    const [isRunningSample, setIsRunningSample] = useState(false);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scriptInputRef = useRef<HTMLInputElement>(null);
@@ -161,6 +215,54 @@ for f in js.files_js:
             }
         }
     };
+
+    const handleExecuteSample = useCallback(() => {
+        setIsRunningSample(true);
+
+        // Build the sample file object
+        const sampleFile: ScriptFile = {
+            id: 'sample_' + Date.now(),
+            name: SAMPLE_SOURCE_FILE.name,
+            content: SAMPLE_SOURCE_FILE.content,
+            size: SAMPLE_SOURCE_FILE.size,
+            type: SAMPLE_SOURCE_FILE.type
+        };
+
+        // Set UI state
+        setLanguage('javascript');
+        setFiles([sampleFile]);
+        setScript(SAMPLE_SCRIPT);
+
+        // Execute the sample script directly (avoid stale closures)
+        try {
+            const logs: string[] = [];
+            const safeConsole = {
+                log: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
+                info: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
+                warn: (...args: any[]) => logs.push("[WARN] " + args.map(a => String(a)).join(' ')),
+                error: (...args: any[]) => logs.push("[ERROR] " + args.map(a => String(a)).join(' ')),
+            };
+
+            const runScript = new Function('files', 'console', SAMPLE_SCRIPT);
+            const result = runScript([sampleFile], safeConsole);
+
+            setConsoleOutput(logs);
+
+            if (result !== undefined) {
+                if (typeof result === 'object') {
+                    setOutput(JSON.stringify(result, null, 2));
+                } else {
+                    setOutput(String(result));
+                }
+            } else {
+                setOutput('Script executed successfully (no return value)');
+            }
+        } catch (err: any) {
+            setConsoleOutput([`[EXECUTION ERROR]: ${err.message}`]);
+        } finally {
+            setIsRunningSample(false);
+        }
+    }, []);
 
     const processFiles = (fileList: FileList) => {
         Array.from(fileList).forEach(file => {
@@ -614,6 +716,14 @@ for f in files:
                     <p className="text-slate-400 text-sm">run JS/TS scripts on multiple files</p>
                 </div>
                 <div className="ml-auto flex items-center space-x-3">
+                    <button
+                        onClick={handleExecuteSample}
+                        className="flex items-center gap-2 px-4 sm:px-5 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                        title="Load a sample file and script, then auto-run to see how Script Runner works"
+                    >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline">Execute Sample</span>
+                    </button>
                     <button
                         onClick={handleRun}
                         className="flex items-center gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white rounded-lg font-bold shadow-lg shadow-green-900/20 active:scale-95 transition-all text-sm sm:text-base"

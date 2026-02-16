@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, Copy, Upload, X, Trash2, Search, FileText, Check } from 'lucide-react';
+import { ArrowLeft, Copy, Upload, X, Trash2, Search, FileText, Check, Sparkles } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 import { LanguageFile } from '../types';
 import { findDuplicates, DuplicateResult } from '../services/duplicateFinder';
@@ -52,6 +52,47 @@ const readFile = (file: File): Promise<LanguageFile> => {
     });
 };
 
+// --- Sample Data ---
+// 3 files with cross-file and within-file duplicates:
+// - "OK" appears in all 3 files (3 occurrences)
+// - "Done" appears in Localizable + Settings (2 occurrences)
+// - "Error" appears in Localizable + Settings with different keys (2 occurrences)
+// - "Settings" appears in Infoplist + Settings file (2 occurrences)
+const SAMPLE_DUP_FILES: LanguageFile[] = [
+    {
+        name: 'Localizable.strings',
+        langCode: 'en',
+        content: [
+            '"confirm_button" = "OK";',
+            '"save_complete" = "Done";',
+            '"network_error" = "Error";',
+            '"welcome_title" = "Welcome to the App";',
+            '"logout_label" = "Sign Out";',
+        ].join('\n'),
+    },
+    {
+        name: 'InfoPlist.strings',
+        langCode: 'en',
+        content: [
+            '"CFBundleDisplayName" = "My App";',
+            '"NSCameraUsageDescription" = "OK";',
+            '"CFBundleName" = "Settings";',
+            '"NSLocationUsageDescription" = "We need your location for maps";',
+        ].join('\n'),
+    },
+    {
+        name: 'Settings.strings',
+        langCode: 'en',
+        content: [
+            '"dialog_accept" = "OK";',
+            '"upload_finished" = "Done";',
+            '"general_error" = "Error";',
+            '"settings_title" = "Settings";',
+            '"theme_label" = "App Theme";',
+        ].join('\n'),
+    },
+];
+
 export const DuplicateFinderView: React.FC<DuplicateFinderViewProps> = ({ onBack }) => {
     const [files, setFiles] = useState<LanguageFile[]>([]);
     const [duplicates, setDuplicates] = useState<DuplicateResult[]>([]);
@@ -100,6 +141,10 @@ export const DuplicateFinderView: React.FC<DuplicateFinderViewProps> = ({ onBack
         handleFilesChange([]);
     }
 
+    const handleExecuteSample = () => {
+        handleFilesChange(SAMPLE_DUP_FILES);
+    };
+
     return (
         <div className="flex flex-col min-h-screen md:h-screen bg-slate-900 text-slate-100 font-sans">
             {/* Header */}
@@ -116,6 +161,16 @@ export const DuplicateFinderView: React.FC<DuplicateFinderViewProps> = ({ onBack
                         Duplicate Value Finder
                     </h1>
                     <p className="text-slate-400 text-sm">Find identical values across multiple files</p>
+                </div>
+                <div className="ml-auto">
+                    <button
+                        onClick={handleExecuteSample}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                        title="Load sample files with duplicate values to see how it works"
+                    >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline">Execute Sample</span>
+                    </button>
                 </div>
             </div>
 

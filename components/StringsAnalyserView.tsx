@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, Languages, AlertCircle, CheckCircle, AlertTriangle, Copy, FileText, Search, Upload, X, Trash2, ScanSearch, Calculator, Download } from 'lucide-react';
+import { ArrowLeft, Languages, AlertCircle, CheckCircle, AlertTriangle, Copy, FileText, Search, Upload, X, Trash2, ScanSearch, Calculator, Download, Sparkles } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 import { LanguageFile } from '../types';
 import { analyzeStrings, StringsAnalysisResult } from '../services/stringsAnalyser';
@@ -30,6 +30,99 @@ const readFile = (file: File): Promise<LanguageFile> => {
         reader.onerror = (err) => reject(err);
         reader.readAsText(file);
     });
+};
+
+// --- Sample Data ---
+// Designed to showcase all features:
+// - 4 languages: en (100%), es (100%), fr (75% - 2 pending), de (50% - 4 missing)
+// - Duplicate values: "OK" used by confirm_ok and dialog_accept
+// - Loose match: "Cancel" vs "cancel" (case difference)
+// - Rich text for word counts
+const SAMPLE_ANALYSER_CATALOG: LanguageFile = {
+    name: 'SampleApp.xcstrings',
+    content: JSON.stringify({
+        sourceLanguage: 'en',
+        strings: {
+            welcome_title: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Welcome to the App' } },
+                    es: { stringUnit: { state: 'translated', value: 'Bienvenido a la aplicaci\u00f3n' } },
+                    fr: { stringUnit: { state: 'translated', value: 'Bienvenue dans l\'application' } },
+                    de: { stringUnit: { state: 'translated', value: 'Willkommen in der App' } },
+                },
+            },
+            login_button: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Sign In to Your Account' } },
+                    es: { stringUnit: { state: 'translated', value: 'Iniciar sesi\u00f3n en tu cuenta' } },
+                    fr: { stringUnit: { state: 'translated', value: 'Connectez-vous \u00e0 votre compte' } },
+                    de: { stringUnit: { state: 'translated', value: 'Melden Sie sich bei Ihrem Konto an' } },
+                },
+            },
+            settings_title: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Application Settings' } },
+                    es: { stringUnit: { state: 'translated', value: 'Ajustes de la aplicaci\u00f3n' } },
+                    fr: { stringUnit: { state: 'translated', value: 'Param\u00e8tres de l\'application' } },
+                    de: { stringUnit: { state: 'translated', value: 'Anwendungseinstellungen' } },
+                },
+            },
+            profile_description: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'View and manage your personal profile information' } },
+                    es: { stringUnit: { state: 'translated', value: 'Ver y gestionar tu informaci\u00f3n de perfil personal' } },
+                    fr: { stringUnit: { state: 'needs_review', value: '' } },
+                    de: { stringUnit: { state: 'needs_review', value: '' } },
+                },
+            },
+            error_network: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Unable to connect to the server. Please check your internet connection and try again.' } },
+                    es: { stringUnit: { state: 'translated', value: 'No se puede conectar al servidor. Comprueba tu conexi\u00f3n a internet e int\u00e9ntalo de nuevo.' } },
+                    fr: { stringUnit: { state: 'needs_review', value: '' } },
+                },
+            },
+            confirm_ok: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'OK' } },
+                    es: { stringUnit: { state: 'translated', value: 'OK' } },
+                    fr: { stringUnit: { state: 'translated', value: 'OK' } },
+                    de: { stringUnit: { state: 'translated', value: 'OK' } },
+                },
+            },
+            dialog_accept: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'OK' } },
+                    es: { stringUnit: { state: 'translated', value: 'OK' } },
+                    fr: { stringUnit: { state: 'translated', value: 'OK' } },
+                },
+            },
+            cancel_action: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Cancel' } },
+                    es: { stringUnit: { state: 'translated', value: 'Cancelar' } },
+                    fr: { stringUnit: { state: 'translated', value: 'Annuler' } },
+                },
+            },
+            dismiss_button: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'cancel' } },
+                    es: { stringUnit: { state: 'translated', value: 'cancelar' } },
+                },
+            },
+        },
+        version: '1.0',
+    }, null, 2),
+    langCode: '',
 };
 
 export const StringsAnalyserView: React.FC<StringsAnalyserViewProps> = ({ onBack }) => {
@@ -134,6 +227,10 @@ export const StringsAnalyserView: React.FC<StringsAnalyserViewProps> = ({ onBack
         handleFilesChange([]);
     }
 
+    const handleExecuteSample = () => {
+        handleFilesChange([SAMPLE_ANALYSER_CATALOG]);
+    };
+
     const handleDownloadReport = () => {
         if (!result) return;
         const report = {
@@ -237,6 +334,16 @@ export const StringsAnalyserView: React.FC<StringsAnalyserViewProps> = ({ onBack
                         Strings Analyser
                     </h1>
                     <p className="text-slate-400 text-sm">Detailed analysis for .xcstrings, .xml, .xcloc (xliff)</p>
+                </div>
+                <div className="ml-auto">
+                    <button
+                        onClick={handleExecuteSample}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                        title="Load a sample catalog to showcase all analysis features"
+                    >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline">Execute Sample</span>
+                    </button>
                 </div>
             </div>
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Upload, X, Save, Merge, FileText, AlertTriangle, Check, CheckCircle2, Copy, FileJson, Activity, ChevronRight, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Upload, X, Save, Merge, FileText, AlertTriangle, Check, CheckCircle2, Copy, FileJson, Activity, ChevronRight, ChevronDown, Sparkles } from 'lucide-react';
 import { LanguageFile } from '../types';
 import { analyzeMergeConflicts, mergeStringCatalogs, MergeConflict, MergeReport, isEqual } from '../services/converter';
 import { DragDropZone } from './DragDropZone';
@@ -19,6 +19,71 @@ const readFile = (file: File): Promise<LanguageFile> => {
         reader.onerror = (err) => reject(err);
         reader.readAsText(file);
     });
+};
+
+// --- Sample Data ---
+const SAMPLE_CATALOG_A: LanguageFile = {
+    name: 'AppStrings.xcstrings',
+    content: JSON.stringify({
+        sourceLanguage: 'en',
+        strings: {
+            welcome_title: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Welcome' } },
+                    es: { stringUnit: { state: 'translated', value: 'Bienvenido' } },
+                },
+            },
+            home_subtitle: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Your dashboard' } },
+                    es: { stringUnit: { state: 'translated', value: 'Tu panel' } },
+                },
+            },
+            auth_login: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Sign In' } },
+                    es: { stringUnit: { state: 'translated', value: 'Iniciar sesi\u00f3n' } },
+                },
+            },
+        },
+        version: '1.0',
+    }, null, 2),
+    langCode: 'xcstrings',
+};
+
+const SAMPLE_CATALOG_B: LanguageFile = {
+    name: 'SettingsStrings.xcstrings',
+    content: JSON.stringify({
+        sourceLanguage: 'en',
+        strings: {
+            settings_title: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Settings' } },
+                    es: { stringUnit: { state: 'translated', value: 'Ajustes' } },
+                },
+            },
+            settings_theme: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'App Theme' } },
+                    es: { stringUnit: { state: 'translated', value: 'Tema de la app' } },
+                },
+            },
+            auth_login: {
+                extractionState: 'manual',
+                localizations: {
+                    en: { stringUnit: { state: 'translated', value: 'Log In' } },
+                    es: { stringUnit: { state: 'translated', value: 'Acceder' } },
+                },
+            },
+        },
+        version: '1.0',
+    }, null, 2),
+    langCode: 'xcstrings',
 };
 
 export const MergeStringCatalogsView: React.FC<MergeStringCatalogsViewProps> = ({ onBack }) => {
@@ -128,6 +193,39 @@ export const MergeStringCatalogsView: React.FC<MergeStringCatalogsViewProps> = (
         }
     };
 
+    const handleExecuteSample = () => {
+        const sampleFiles = [SAMPLE_CATALOG_A, SAMPLE_CATALOG_B];
+        setFiles(sampleFiles);
+        setMergedOutput('');
+        setMergeReport(null);
+        setError(null);
+
+        // The useEffect will auto-analyze conflicts.
+        // We use a timeout to let the effect run, then auto-resolve and merge.
+        setTimeout(() => {
+            try {
+                const { conflicts: detectedConflicts } = analyzeMergeConflicts(sampleFiles);
+
+                // Auto-resolve all conflicts using Catalog A
+                const autoResolutions: Record<string, any> = {};
+                const catalogAContent = JSON.parse(SAMPLE_CATALOG_A.content);
+                detectedConflicts.forEach(c => {
+                    if (catalogAContent.strings[c.key]) {
+                        autoResolutions[c.key] = catalogAContent.strings[c.key];
+                    }
+                });
+                setResolutions(autoResolutions);
+
+                // Auto-merge
+                const { outputContent, report } = mergeStringCatalogs(sampleFiles, autoResolutions);
+                setMergedOutput(outputContent);
+                setMergeReport(report);
+            } catch (e: any) {
+                setError(e.message || 'Sample merge failed');
+            }
+        }, 100);
+    };
+
     const handleDownload = () => {
         if (!mergedOutput) return;
         const blob = new Blob([mergedOutput], { type: 'application/json' });
@@ -163,6 +261,16 @@ export const MergeStringCatalogsView: React.FC<MergeStringCatalogsViewProps> = (
                         Merge String Catalogs
                     </h1>
                     <p className="text-slate-400 text-sm">Combine multiple .xcstrings files with smart conflict resolution</p>
+                </div>
+                <div className="ml-auto">
+                    <button
+                        onClick={handleExecuteSample}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                        title="Load two sample .xcstrings catalogs with a conflict and auto-merge"
+                    >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline">Execute Sample</span>
+                    </button>
                 </div>
             </div>
 

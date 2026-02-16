@@ -24,3 +24,6 @@ The **Combine Strings** tool allows you to merge multiple `.strings`, `.stringsd
 4. **Download**:
    - For iOS: Preview the generated content and click **Download .xcstrings**.
    - For Android: Toggle the tab to "Android (.xml)" and download individual language files.
+
+### Quick Demo
+Click the **Execute Sample** button in the header to instantly load sample `.strings` files for English, Spanish, and French. The tool will auto-convert them, producing both an iOS `.xcstrings` catalog and Android XML outputs so you can see the full workflow in action.

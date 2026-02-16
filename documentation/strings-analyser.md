@@ -22,3 +22,9 @@ The **Strings Analyser** provides deep insights into your localization files (`.
    - **Duplicate Detection**: Lists of repeated string values.
    - **Word Count**: Total word counts for budgeting.
 3. **Export**: Click **Export Report** to save the data for offline review.
+
+### Quick Demo
+Click the **Execute Sample** button in the header to load a sample `.xcstrings` catalog that demonstrates every analysis feature:
+- **Language Breakdown**: 4 languages — English (100%), Spanish (100%), French (75%, 2 pending), German (50%, missing keys)
+- **Duplicate Detection**: "OK" appears in both `confirm_ok` and `dialog_accept` (exact duplicate); "Cancel" vs "cancel" shows as a loose match
+- **Word Count**: Rich multi-word strings for meaningful per-language word totals

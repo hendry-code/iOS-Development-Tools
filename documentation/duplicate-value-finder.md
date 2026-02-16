@@ -13,3 +13,12 @@ The **Duplicate Value Finder** helps iterate on localization quality by finding 
 2. **Review**: The tool automatically lists all values that appear more than once.
 3. **Investigate**: Expand any item to see exactly which keys share that text.
 4. **Refactor**: Use the copy button to grab the keys and consolidate them in your project if needed.
+
+### Quick Demo
+Click the **Execute Sample** button in the header to load 3 sample `.strings` files (`Localizable`, `InfoPlist`, `Settings`) containing cross-file duplicates:
+- **"OK"** appears 3 times across all 3 files (`confirm_button`, `NSCameraUsageDescription`, `dialog_accept`)
+- **"Done"** appears in 2 files (`save_complete`, `upload_finished`)
+- **"Error"** appears in 2 files (`network_error`, `general_error`)
+- **"Settings"** appears in 2 files (`CFBundleName`, `settings_title`)
+
+Each result shows the duplicate value, occurrence count, and every file + key location with copy buttons.
