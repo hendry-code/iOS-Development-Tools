@@ -16,3 +16,13 @@ The **JSON to Swift Codable** tool automates the process of creating Swift `Deco
 2. **Input**: Paste your JSON object into the left panel.
 3. **Result**: The right panel updates in real-time with the generated Swift structs.
 4. **Copy**: Click the copy icon in the code block to use the code in your Xcode project.
+
+### Quick Demo
+Click the **Execute Sample** button to load a rich JSON sample featuring:
+- **Nested objects** (`address` with street, city, zip)
+- **Arrays of objects** (`recent_orders`)
+- **Nullable fields** (`profile_image: null`)
+- **snake_case keys** for CodingKeys generation
+- **Mixed types** (String, Int, Double, Bool)
+
+Toggle the configuration options to see how the Swift output changes in real-time.

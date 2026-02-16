@@ -1,11 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Settings, AlertCircle, Code } from 'lucide-react';
+import { ArrowLeft, Settings, AlertCircle, Code, Sparkles } from 'lucide-react';
 import { convertJsonToSwift, ConverterOptions } from '../services/swiftConverter';
 import { CodeBlock } from './CodeBlock'; // Reusing CodeBlock
 
 interface JsonToSwiftViewProps {
     onBack: () => void;
 }
+
+// --- Sample Data ---
+const SAMPLE_JSON_INPUT = JSON.stringify({
+    user_name: 'Jane Doe',
+    email_address: 'jane@example.com',
+    age: 28,
+    is_premium: true,
+    profile_image: null,
+    address: {
+        street_name: '123 Main St',
+        city: 'San Francisco',
+        zip_code: '94105',
+    },
+    tags: ['developer', 'designer'],
+    recent_orders: [
+        {
+            order_id: 1001,
+            total_amount: 49.99,
+            is_delivered: false,
+        },
+    ],
+}, null, 2);
 
 export const JsonToSwiftView: React.FC<JsonToSwiftViewProps> = ({ onBack }) => {
     const [jsonInput, setJsonInput] = useState<string>('');
@@ -46,6 +68,10 @@ export const JsonToSwiftView: React.FC<JsonToSwiftViewProps> = ({ onBack }) => {
         return () => clearTimeout(timer);
     }, [jsonInput, options]);
 
+    const handleExecuteSample = () => {
+        setJsonInput(SAMPLE_JSON_INPUT);
+    };
+
     return (
         <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans">
             {/* Header */}
@@ -65,6 +91,16 @@ export const JsonToSwiftView: React.FC<JsonToSwiftViewProps> = ({ onBack }) => {
                             JSON to Swift Codable
                         </h1>
                     </div>
+                </div>
+                <div className="ml-auto">
+                    <button
+                        onClick={handleExecuteSample}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                        title="Load sample JSON with nested objects, arrays, and nulls"
+                    >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline">Execute Sample</span>
+                    </button>
                 </div>
             </header>
 

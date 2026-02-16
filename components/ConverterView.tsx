@@ -12,6 +12,7 @@ import {
     FileJson,
     Trash2,
     Upload,
+    Sparkles,
 } from 'lucide-react';
 import { CodeBlock } from './CodeBlock';
 import { DragDropZone } from './DragDropZone';
@@ -31,6 +32,31 @@ const readFileContent = (file: File): Promise<{ name: string; content: string }>
         reader.readAsText(file);
     });
 };
+
+// --- Sample Data ---
+const SAMPLE_PROP_FILES: { name: string; content: string }[] = [
+    {
+        name: 'Localizable.strings',
+        content: [
+            '"welcome_title" = "Welcome to the App";',
+            '"login_button" = "Sign In";',
+            '"logout_button" = "Sign Out";',
+            '"settings_title" = "Settings";',
+            '"profile_name" = "Your Profile";',
+        ].join('\n'),
+    },
+    {
+        name: 'strings.xml',
+        content: [
+            '<?xml version="1.0" encoding="utf-8"?>',
+            '<resources>',
+            '    <string name="app_name">My Application</string>',
+            '    <string name="error_network">Network error occurred</string>',
+            '    <string name="btn_retry">Retry</string>',
+            '</resources>',
+        ].join('\n'),
+    },
+];
 
 export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = ({ onBack }) => {
     const [inputFiles, setInputFiles] = useState<{ name: string, content: string }[]>([]);
@@ -121,6 +147,12 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
         setError(null);
     };
 
+    const handleExecuteSample = () => {
+        setInputFiles(SAMPLE_PROP_FILES);
+        setError(null);
+        handleConvert(SAMPLE_PROP_FILES);
+    };
+
     return (
         <div className="flex flex-col min-h-screen md:h-screen bg-slate-900 text-slate-100 font-sans">
             <header className="flex items-center px-6 py-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur-md sticky top-0 z-10">
@@ -136,6 +168,16 @@ export const PropertiesConverterView: React.FC<PropertiesConverterViewProps> = (
                         Properties Converter
                     </h1>
                     <p className="text-slate-400 text-sm">Convert iOS/Android files to Java properties</p>
+                </div>
+                <div className="ml-auto">
+                    <button
+                        onClick={handleExecuteSample}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                        title="Load sample files and convert to properties format"
+                    >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline">Execute Sample</span>
+                    </button>
                 </div>
             </header>
 

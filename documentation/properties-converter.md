@@ -15,3 +15,6 @@ The **Properties Converter** allows you to convert mobile localization files (iO
    - Click **Convert to Properties**.
 3. **Result**:
    - Copy the output code or use it directly in your Java project.
+
+### Quick Demo
+Click the **Execute Sample** button to load a sample `Localizable.strings` and `strings.xml` file. The converter merges keys from both formats into a single `.properties` output, showcasing multi-format input support.

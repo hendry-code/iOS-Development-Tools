@@ -15,3 +15,6 @@ The **XML Converter** specializes in converting various iOS localization formats
 3. **Download**:
    - Download individual `strings.xml` files.
    - Or click **Download All (ZIP)** for the complete folder structure.
+
+### Quick Demo
+Click the **Execute Sample** button to load a sample `.xcstrings` catalog with 4 keys translated into English, Spanish, and French. The tool generates 3 `strings.xml` files (one per language) with Android-style `values-*` folder paths, plus a **Download All (ZIP)** option.

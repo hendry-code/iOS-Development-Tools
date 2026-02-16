@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, Save, FolderOpen, Trash2, FileType, FileCode, Download, FolderArchive, X } from 'lucide-react';
+import { ArrowLeft, Save, FolderOpen, Trash2, FileType, FileCode, Download, FolderArchive, X, Sparkles } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 import JSZip from 'jszip';
 import {
@@ -14,6 +14,46 @@ import {
 interface XmlConverterViewProps {
     onBack: () => void;
 }
+
+// --- Sample Data ---
+const SAMPLE_XML_CATALOG = JSON.stringify({
+    sourceLanguage: 'en',
+    strings: {
+        app_name: {
+            extractionState: 'manual',
+            localizations: {
+                en: { stringUnit: { state: 'translated', value: 'My Application' } },
+                es: { stringUnit: { state: 'translated', value: 'Mi Aplicación' } },
+                fr: { stringUnit: { state: 'translated', value: 'Mon Application' } },
+            },
+        },
+        welcome_message: {
+            extractionState: 'manual',
+            localizations: {
+                en: { stringUnit: { state: 'translated', value: 'Welcome back!' } },
+                es: { stringUnit: { state: 'translated', value: '¡Bienvenido de nuevo!' } },
+                fr: { stringUnit: { state: 'translated', value: 'Bon retour!' } },
+            },
+        },
+        save_button: {
+            extractionState: 'manual',
+            localizations: {
+                en: { stringUnit: { state: 'translated', value: 'Save Changes' } },
+                es: { stringUnit: { state: 'translated', value: 'Guardar cambios' } },
+                fr: { stringUnit: { state: 'translated', value: 'Enregistrer les modifications' } },
+            },
+        },
+        cancel_button: {
+            extractionState: 'manual',
+            localizations: {
+                en: { stringUnit: { state: 'translated', value: 'Cancel' } },
+                es: { stringUnit: { state: 'translated', value: 'Cancelar' } },
+                fr: { stringUnit: { state: 'translated', value: 'Annuler' } },
+            },
+        },
+    },
+    version: '1.0',
+}, null, 2);
 
 export const XmlConverterView: React.FC<XmlConverterViewProps> = ({ onBack }) => {
     const [inputFile, setInputFile] = useState<{ name: string, content: string } | null>(null);
@@ -125,6 +165,13 @@ export const XmlConverterView: React.FC<XmlConverterViewProps> = ({ onBack }) =>
         setError(null);
     };
 
+    const handleExecuteSample = () => {
+        const fileName = 'SampleApp.xcstrings';
+        setInputFile({ name: fileName, content: SAMPLE_XML_CATALOG });
+        setError(null);
+        convert(SAMPLE_XML_CATALOG, fileName);
+    };
+
     return (
         <div className="flex flex-col min-h-screen md:h-screen bg-slate-900 text-slate-100 font-sans">
             <header className="flex items-center px-6 py-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur-md sticky top-0 z-10">
@@ -144,6 +191,14 @@ export const XmlConverterView: React.FC<XmlConverterViewProps> = ({ onBack }) =>
                      but for now user only asked for UI similarity, not necessarily project persistence. 
                      I will leave the right side clean or add a Clear button. */}
                 <div className="ml-auto flex items-center space-x-2">
+                    <button
+                        onClick={handleExecuteSample}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                        title="Load a sample .xcstrings catalog and convert to Android XML"
+                    >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline">Execute Sample</span>
+                    </button>
                     <button onClick={handleClear} title="Clear Project" className="p-2 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition-colors"><Trash2 size={18} /></button>
                 </div>
             </header>

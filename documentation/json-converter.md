@@ -19,3 +19,6 @@ The **JSON Converter** facilitates the conversion between mobile localization fi
    - The tool automatically attempts to parse and convert upon file load.
    - If successful, the output appears in the right panel.
 4. **Download**: Click **Download File** to save the result.
+
+### Quick Demo
+Click the **Execute Sample** button to load a sample `.strings` file with 5 localization keys. The tool auto-converts it to a formatted JSON object, demonstrating the **Strings → JSON** direction with download support.

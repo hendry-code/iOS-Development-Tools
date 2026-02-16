@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, Upload, Trash2, FileJson, FileType, CheckCircle, AlertTriangle, Download } from 'lucide-react';
+import { ArrowLeft, Upload, Trash2, FileJson, FileType, CheckCircle, AlertTriangle, Download, Sparkles } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 import { CodeBlock } from './CodeBlock';
 import {
@@ -15,6 +15,16 @@ interface JsonConverterViewProps {
 }
 
 type TabMode = 'strings-to-json' | 'json-to-strings';
+
+// --- Sample Data ---
+const SAMPLE_STRINGS_CONTENT = [
+    '/* App UI Strings */',
+    '"welcome_title" = "Welcome to the App";',
+    '"login_button" = "Sign In to Your Account";',
+    '"error_network" = "Unable to connect. Please try again.";',
+    '"settings_title" = "Application Settings";',
+    '"logout_button" = "Sign Out";',
+].join('\n');
 
 export const JsonConverterView: React.FC<JsonConverterViewProps> = ({ onBack }) => {
     const [activeTab, setActiveTab] = useState<TabMode>('strings-to-json');
@@ -88,6 +98,14 @@ export const JsonConverterView: React.FC<JsonConverterViewProps> = ({ onBack }) 
         setError(null);
     };
 
+    const handleExecuteSample = () => {
+        setActiveTab('strings-to-json');
+        setError(null);
+        const fileName = 'Localizable.strings';
+        setInputFile({ name: fileName, content: SAMPLE_STRINGS_CONTENT });
+        convert(SAMPLE_STRINGS_CONTENT, fileName);
+    };
+
     const handleDownload = () => {
         if (!outputContent) return;
         const blob = new Blob([outputContent], { type: 'text/plain' });
@@ -115,6 +133,16 @@ export const JsonConverterView: React.FC<JsonConverterViewProps> = ({ onBack }) 
                         JSON Converter
                     </h1>
                     <p className="text-slate-400 text-sm">Convert between .strings and JSON formats</p>
+                </div>
+                <div className="ml-auto">
+                    <button
+                        onClick={handleExecuteSample}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                        title="Load a sample .strings file and convert to JSON"
+                    >
+                        <Sparkles size={16} />
+                        <span className="hidden sm:inline">Execute Sample</span>
+                    </button>
                 </div>
             </header>
 
