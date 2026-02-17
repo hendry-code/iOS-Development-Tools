@@ -3,7 +3,7 @@ import {
   ArrowLeft, X, Download, Search, Upload, ChevronUp, ChevronDown,
   CaseSensitive, Regex, WholeWord, RotateCcw, RotateCw, Info,
   AlertTriangle, Check, Code, Columns, FileText, Plus, Hash,
-  Copy, Scissors, Trash2, ClipboardPaste, CopyPlus
+  Copy, Scissors, Trash2, ClipboardPaste, CopyPlus, Languages, CheckSquare, Square, Zap, Loader2
 } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 
@@ -28,6 +28,9 @@ interface ValidationError {
   message: string;
 }
 
+// Large file threshold — files above this size activate performance mode
+const LARGE_FILE_THRESHOLD = 512 * 1024; // 512 KB
+
 // Helper to generate unique IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -38,6 +41,52 @@ const getFileType = (filename: string): 'json' | 'xml' | 'strings' | 'text' => {
   if (ext === 'xml' || ext === 'stringsdict') return 'xml';
   if (ext === 'strings') return 'strings';
   return 'text';
+};
+
+// Check if file is .xcstrings
+const isXcstringsFile = (filename: string): boolean => {
+  return filename.endsWith('.xcstrings');
+};
+
+// Extract all unique language codes from xcstrings JSON content
+const extractXcstringsLanguages = (content: string): { languages: string[]; sourceLanguage: string } => {
+  try {
+    const parsed = JSON.parse(content);
+    const sourceLanguage = parsed.sourceLanguage || 'en';
+    const languageSet = new Set<string>();
+
+    if (parsed.strings && typeof parsed.strings === 'object') {
+      for (const key of Object.keys(parsed.strings)) {
+        const localizations = parsed.strings[key]?.localizations;
+        if (localizations && typeof localizations === 'object') {
+          for (const lang of Object.keys(localizations)) {
+            languageSet.add(lang);
+          }
+        }
+      }
+    }
+
+    const languages = Array.from(languageSet).sort((a, b) => {
+      // Source language always first
+      if (a === sourceLanguage) return -1;
+      if (b === sourceLanguage) return 1;
+      return a.localeCompare(b);
+    });
+
+    return { languages, sourceLanguage };
+  } catch {
+    return { languages: [], sourceLanguage: 'en' };
+  }
+};
+
+// Get display name for a language code
+const getLanguageDisplayName = (code: string): string => {
+  try {
+    const displayNames = new Intl.DisplayNames(['en'], { type: 'language' });
+    return displayNames.of(code) || code;
+  } catch {
+    return code;
+  }
 };
 
 // Validate content based on file type
@@ -314,9 +363,24 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
   const [goToLineValue, setGoToLineValue] = useState('');
   const [showStats, setShowStats] = useState(false);
   const [showDiff, setShowDiff] = useState(false);
+  const [diffPreparing, setDiffPreparing] = useState(false);
+  const [diffResult, setDiffResult] = useState<{ type: 'add' | 'remove' | 'unchanged'; originalLine?: string; currentLine?: string; originalNum?: number; currentNum?: number }[] | null>(null);
+  const diffLeftRef = useRef<HTMLDivElement>(null);
+  const diffRightRef = useRef<HTMLDivElement>(null);
+  const [diffSyncingScroll, setDiffSyncingScroll] = useState(false);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPos, setContextMenuPos] = useState({ x: 0, y: 0 });
   const [showErrors, setShowErrors] = useState(false);
+
+  // Delete Languages state
+  const [showDeleteLanguages, setShowDeleteLanguages] = useState(false);
+  const [selectedLanguages, setSelectedLanguages] = useState<Set<string>>(new Set());
+  const [deletionComplete, setDeletionComplete] = useState(false);
+  const [deletedCount, setDeletedCount] = useState(0);
+  const [deletionProgress, setDeletionProgress] = useState<number | null>(null); // null = not deleting
+
+  // Upload progress state
+  const [uploadProgress, setUploadProgress] = useState<{ fileName: string; percent: number; size: number } | null>(null);
 
   // Undo/Redo state
   const [history, setHistory] = useState<Map<string, HistoryState[]>>(new Map());
@@ -329,22 +393,63 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
 
   const editedContent = activeFile?.content || '';
   const fileType = activeFile ? getFileType(activeFile.name) : 'text';
+  const isLargeFile = editedContent.length > LARGE_FILE_THRESHOLD;
 
-  // Validation errors
-  const validationErrors = useMemo(() => {
-    if (!activeFile) return [];
+  // Scroll tracking for virtualized line numbers
+  const [editorScrollTop, setEditorScrollTop] = useState(0);
+  const [editorHeight, setEditorHeight] = useState(600);
+
+  // Debounced validation/stats state for large files
+  const [debouncedValidationErrors, setDebouncedValidationErrors] = useState<ValidationError[]>([]);
+  const [debouncedFileStats, setDebouncedFileStats] = useState({ lines: 0, chars: 0, words: 0, keys: 0, size: 0 });
+
+  // Validation errors — synchronous for small files, debounced for large
+  const syncValidationErrors = useMemo(() => {
+    if (isLargeFile || !activeFile) return [];
     return validateContent(editedContent, fileType);
-  }, [editedContent, fileType, activeFile]);
+  }, [editedContent, fileType, activeFile, isLargeFile]);
 
-  // File statistics
-  const fileStats = useMemo(() => {
+  useEffect(() => {
+    if (!isLargeFile || !activeFile) {
+      setDebouncedValidationErrors([]);
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      setDebouncedValidationErrors(validateContent(editedContent, fileType));
+    }, 1500);
+    return () => clearTimeout(timeoutId);
+  }, [editedContent, fileType, activeFile, isLargeFile]);
+
+  const validationErrors = isLargeFile ? debouncedValidationErrors : syncValidationErrors;
+
+  // File statistics — synchronous for small files, debounced for large
+  const syncFileStats = useMemo(() => {
+    if (isLargeFile) return { lines: 0, chars: 0, words: 0, keys: 0, size: 0 };
     const lines = editedContent.split('\n').length;
     const chars = editedContent.length;
     const words = editedContent.trim() ? editedContent.trim().split(/\s+/).length : 0;
     const keys = countKeys(editedContent, fileType);
     const size = new Blob([editedContent]).size;
     return { lines, chars, words, keys, size };
-  }, [editedContent, fileType]);
+  }, [editedContent, fileType, isLargeFile]);
+
+  useEffect(() => {
+    if (!isLargeFile) {
+      setDebouncedFileStats(syncFileStats);
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      const lines = editedContent.split('\n').length;
+      const chars = editedContent.length;
+      const words = editedContent.trim() ? editedContent.trim().split(/\s+/).length : 0;
+      // Skip deep key counting for large files — too expensive
+      const size = new Blob([editedContent]).size;
+      setDebouncedFileStats({ lines, chars, words, keys: 0, size });
+    }, 1500);
+    return () => clearTimeout(timeoutId);
+  }, [editedContent, isLargeFile, syncFileStats]);
+
+  const fileStats = isLargeFile ? debouncedFileStats : syncFileStats;
 
   // Check for unsaved changes
   const hasUnsavedChanges = useCallback((file: LoadedFile) => {
@@ -372,9 +477,12 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
     }
   }, [activeFile, history]);
 
-  // Add to history on content change (debounced)
+  // Add to history on content change (debounced — longer delay for large files)
   useEffect(() => {
     if (!activeFile) return;
+
+    const debounceMs = isLargeFile ? 1500 : 500;
+    const maxHistory = isLargeFile ? 20 : 100;
 
     const timeoutId = setTimeout(() => {
       const currentHistory = history.get(activeFile.id) || [];
@@ -386,15 +494,14 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
           content: editedContent,
           cursorPosition: textareaRef.current?.selectionStart || 0
         }];
-        // Keep last 100 states
-        const trimmedHistory = newHistory.slice(-100);
+        const trimmedHistory = newHistory.slice(-maxHistory);
         setHistory(prev => new Map(prev).set(activeFile.id, trimmedHistory));
         setHistoryIndex(prev => new Map(prev).set(activeFile.id, trimmedHistory.length - 1));
       }
-    }, 500);
+    }, debounceMs);
 
     return () => clearTimeout(timeoutId);
-  }, [editedContent, activeFile, history, historyIndex]);
+  }, [editedContent, activeFile, history, historyIndex, isLargeFile]);
 
   // Calculate line height
   useEffect(() => {
@@ -474,6 +581,7 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
         setShowFind(false);
         setShowGoToLine(false);
         setShowContextMenu(false);
+        setShowDeleteLanguages(false);
       }
     };
 
@@ -523,6 +631,19 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
   const processFile = (selectedFile: File) => {
     setError(null);
     const reader = new FileReader();
+
+    // Track upload progress for larger files
+    reader.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percent = Math.round((e.loaded / e.total) * 100);
+        setUploadProgress({ fileName: selectedFile.name, percent, size: e.total });
+      }
+    };
+
+    reader.onloadstart = () => {
+      setUploadProgress({ fileName: selectedFile.name, percent: 0, size: selectedFile.size });
+    };
+
     reader.onload = () => {
       const content = reader.result as string;
       const newFile: LoadedFile = {
@@ -531,11 +652,17 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
         originalContent: content,
         content: content,
       };
-      setOpenFiles(prev => [...prev, newFile]);
-      setActiveFileId(newFile.id);
+      setUploadProgress(prev => prev ? { ...prev, percent: 100 } : null);
+      // Brief delay to show 100% before clearing
+      setTimeout(() => {
+        setOpenFiles(prev => [...prev, newFile]);
+        setActiveFileId(newFile.id);
+        setUploadProgress(null);
+      }, 300);
     };
     reader.onerror = () => {
       setError('An error occurred while reading the file.');
+      setUploadProgress(null);
     };
     reader.readAsText(selectedFile);
   };
@@ -610,12 +737,18 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
 
   const handleScroll = () => {
     if (textareaRef.current) {
-      if (backdropRef.current) {
-        backdropRef.current.scrollTop = textareaRef.current.scrollTop;
+      const { scrollTop, clientHeight } = textareaRef.current;
+
+      // Track scroll position for virtualized line numbers
+      setEditorScrollTop(scrollTop);
+      setEditorHeight(clientHeight);
+
+      if (!isLargeFile && backdropRef.current) {
+        backdropRef.current.scrollTop = scrollTop;
         backdropRef.current.scrollLeft = textareaRef.current.scrollLeft;
       }
       if (lineNumbersRef.current) {
-        lineNumbersRef.current.scrollTop = textareaRef.current.scrollTop;
+        lineNumbersRef.current.scrollTop = scrollTop;
       }
     }
   };
@@ -735,6 +868,109 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
     }
   };
 
+  // Xcstrings language info (memoized)
+  const xcstringsInfo = useMemo(() => {
+    if (!activeFile || !isXcstringsFile(activeFile.name)) return null;
+    return extractXcstringsLanguages(editedContent);
+  }, [activeFile, editedContent]);
+
+  // Delete Languages handlers
+  const handleOpenDeleteLanguages = () => {
+    setSelectedLanguages(new Set());
+    setDeletionComplete(false);
+    setDeletedCount(0);
+    setShowDeleteLanguages(true);
+  };
+
+  const handleToggleLanguage = (lang: string) => {
+    setSelectedLanguages(prev => {
+      const next = new Set(prev);
+      if (next.has(lang)) {
+        next.delete(lang);
+      } else {
+        next.add(lang);
+      }
+      return next;
+    });
+  };
+
+  const handleSelectAllLanguages = () => {
+    if (!xcstringsInfo) return;
+    const nonSource = xcstringsInfo.languages.filter(l => l !== xcstringsInfo.sourceLanguage);
+    if (selectedLanguages.size === nonSource.length) {
+      setSelectedLanguages(new Set());
+    } else {
+      setSelectedLanguages(new Set(nonSource));
+    }
+  };
+
+  const handleDeleteLanguages = () => {
+    if (!activeFile || selectedLanguages.size === 0) return;
+
+    try {
+      const parsed = JSON.parse(editedContent);
+
+      if (parsed.strings && typeof parsed.strings === 'object') {
+        const allKeys = Object.keys(parsed.strings);
+        const totalKeys = allKeys.length;
+        let processedKeys = 0;
+
+        setDeletionProgress(0);
+
+        // Process deletion in chunks to allow progress updates
+        const chunkSize = Math.max(1, Math.floor(totalKeys / 20));
+
+        const processChunk = (startIdx: number) => {
+          const endIdx = Math.min(startIdx + chunkSize, totalKeys);
+
+          for (let i = startIdx; i < endIdx; i++) {
+            const localizations = parsed.strings[allKeys[i]]?.localizations;
+            if (localizations && typeof localizations === 'object') {
+              for (const lang of selectedLanguages) {
+                delete localizations[lang];
+              }
+            }
+            processedKeys++;
+          }
+
+          const percent = Math.round((processedKeys / totalKeys) * 100);
+          setDeletionProgress(percent);
+
+          if (endIdx < totalKeys) {
+            // Schedule next chunk
+            requestAnimationFrame(() => processChunk(endIdx));
+          } else {
+            // All done — finalize
+            setTimeout(() => {
+              const updatedJson = JSON.stringify(parsed, null, 2);
+              setEditedContent(updatedJson);
+              setDeletedCount(selectedLanguages.size);
+              setDeletionProgress(null);
+              setDeletionComplete(true);
+            }, 200);
+          }
+        };
+
+        // Start chunked processing
+        requestAnimationFrame(() => processChunk(0));
+      } else {
+        setDeletionProgress(null);
+        setDeletionComplete(true);
+        setDeletedCount(selectedLanguages.size);
+      }
+    } catch {
+      setError('Failed to parse xcstrings file for language deletion.');
+      setDeletionProgress(null);
+      setShowDeleteLanguages(false);
+    }
+  };
+
+  const handleDownloadAndClose = () => {
+    handleDownload();
+    setShowDeleteLanguages(false);
+    setDeletionComplete(false);
+  };
+
   // Context menu handlers
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -827,59 +1063,250 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
     }
   }, [showContextMenu]);
 
-  // Line numbers component
-  const lineNumbers = useMemo(() => {
-    const lines = editedContent.split('\n');
-    return lines.map((_, i) => (
-      <div key={i} className="text-right pr-3 text-slate-500 select-none" style={{ height: lineHeight }}>
-        {i + 1}
-      </div>
-    ));
-  }, [editedContent, lineHeight]);
+  // Line numbers component — virtualized for large files
+  const totalLineCount = useMemo(() => {
+    return editedContent.split('\n').length;
+  }, [editedContent]);
 
-  // Diff view component
+  const lineNumbers = useMemo(() => {
+    if (!isLargeFile) {
+      // Small files: render all line numbers directly
+      return (
+        <>
+          {Array.from({ length: totalLineCount }, (_, i) => (
+            <div key={i} className="text-right pr-3 text-slate-500 select-none" style={{ height: lineHeight }}>
+              {i + 1}
+            </div>
+          ))}
+        </>
+      );
+    }
+
+    // Large files: only render visible lines + buffer
+    const buffer = 30;
+    const firstVisible = Math.max(0, Math.floor(editorScrollTop / lineHeight) - buffer);
+    const visibleCount = Math.ceil(editorHeight / lineHeight) + buffer * 2;
+    const lastVisible = Math.min(totalLineCount - 1, firstVisible + visibleCount);
+    const totalHeight = totalLineCount * lineHeight;
+
+    return (
+      <div style={{ height: totalHeight, position: 'relative' }}>
+        {Array.from({ length: lastVisible - firstVisible + 1 }, (_, idx) => {
+          const lineNum = firstVisible + idx;
+          return (
+            <div
+              key={lineNum}
+              className="text-right pr-3 text-slate-500 select-none"
+              style={{ height: lineHeight, position: 'absolute', top: lineNum * lineHeight, right: 0, left: 0 }}
+            >
+              {lineNum + 1}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }, [editedContent, lineHeight, isLargeFile, editorScrollTop, editorHeight, totalLineCount]);
+
+  // Diff view — fast index-based comparison + virtualized rendering
+  const [diffScrollTop, setDiffScrollTop] = useState(0);
+  const [diffContainerHeight, setDiffContainerHeight] = useState(600);
+  const [diffStats, setDiffStats] = useState({ added: 0, removed: 0, unchanged: 0 });
+
+  const computeDiff = useCallback(() => {
+    if (!activeFile) return;
+    setDiffPreparing(true);
+    setShowDiff(true);
+
+    // Use requestAnimationFrame to let the loader paint first
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        const originalLines = activeFile.originalContent.split('\n');
+        const currentLines = editedContent.split('\n');
+        const maxLen = Math.max(originalLines.length, currentLines.length);
+
+        // Fast O(n) index-based comparison — no LCS needed
+        type DiffLine = { type: 'unchanged' | 'modified' | 'added' | 'removed'; originalNum: number; currentNum: number; originalText: string; currentText: string };
+        const lines: DiffLine[] = [];
+        let added = 0, removed = 0, unchanged = 0;
+
+        for (let i = 0; i < maxLen; i++) {
+          const oLine = i < originalLines.length ? originalLines[i] : undefined;
+          const cLine = i < currentLines.length ? currentLines[i] : undefined;
+
+          if (oLine !== undefined && cLine !== undefined) {
+            if (oLine === cLine) {
+              lines.push({ type: 'unchanged', originalNum: i + 1, currentNum: i + 1, originalText: oLine, currentText: cLine });
+              unchanged++;
+            } else {
+              lines.push({ type: 'modified', originalNum: i + 1, currentNum: i + 1, originalText: oLine, currentText: cLine });
+              added++; removed++;
+            }
+          } else if (oLine !== undefined) {
+            lines.push({ type: 'removed', originalNum: i + 1, currentNum: -1, originalText: oLine, currentText: '' });
+            removed++;
+          } else if (cLine !== undefined) {
+            lines.push({ type: 'added', originalNum: -1, currentNum: i + 1, originalText: '', currentText: cLine });
+            added++;
+          }
+        }
+
+        setDiffResult(lines as any);
+        setDiffStats({ added, removed, unchanged });
+        setDiffPreparing(false);
+      }, 30);
+    });
+  }, [activeFile, editedContent]);
+
+  // Toggle diff with async compute
+  const toggleDiff = useCallback(() => {
+    if (showDiff) {
+      setShowDiff(false);
+      setDiffResult(null);
+      setDiffPreparing(false);
+    } else {
+      computeDiff();
+    }
+  }, [showDiff, computeDiff]);
+
+  // Sync scroll between diff panels
+  const handleDiffScroll = useCallback((source: 'left' | 'right') => {
+    if (diffSyncingScroll) return;
+    setDiffSyncingScroll(true);
+    const from = source === 'left' ? diffLeftRef.current : diffRightRef.current;
+    const to = source === 'left' ? diffRightRef.current : diffLeftRef.current;
+    if (from && to) {
+      to.scrollTop = from.scrollTop;
+      to.scrollLeft = from.scrollLeft;
+      setDiffScrollTop(from.scrollTop);
+      // Measure container height on first scroll
+      if (diffContainerHeight !== from.clientHeight) {
+        setDiffContainerHeight(from.clientHeight);
+      }
+    }
+    requestAnimationFrame(() => setDiffSyncingScroll(false));
+  }, [diffSyncingScroll, diffContainerHeight]);
+
+  // Diff view component with virtualized rendering
   const renderDiff = () => {
     if (!activeFile) return null;
 
-    const originalLines = activeFile.originalContent.split('\n');
-    const currentLines = editedContent.split('\n');
+    // Loading state
+    if (diffPreparing || !diffResult) {
+      return (
+        <div className="flex-1 flex items-center justify-center bg-slate-900/50 rounded-lg border border-slate-800">
+          <div className="flex flex-col items-center space-y-3">
+            <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+            <p className="text-sm font-medium text-slate-400">Preparing diff view...</p>
+          </div>
+        </div>
+      );
+    }
+
+    const totalLines = diffResult.length;
+    const rowHeight = lineHeight || 24;
+
+    // Virtualization: only render visible lines + buffer
+    const bufferLines = 20;
+    const startLine = Math.max(0, Math.floor(diffScrollTop / rowHeight) - bufferLines);
+    const visibleCount = Math.ceil(diffContainerHeight / rowHeight) + bufferLines * 2;
+    const endLine = Math.min(totalLines, startLine + visibleCount);
+
+    const topSpacerHeight = startLine * rowHeight;
+    const bottomSpacerHeight = Math.max(0, (totalLines - endLine) * rowHeight);
+    const visibleLines = diffResult.slice(startLine, endLine) as { type: 'unchanged' | 'modified' | 'added' | 'removed'; originalNum: number; currentNum: number; originalText: string; currentText: string }[];
 
     return (
-      <div className="flex-1 flex overflow-hidden">
-        <div className="flex-1 overflow-auto p-4 border-r border-slate-700">
-          <div className="text-xs text-slate-400 mb-2 font-semibold">Original</div>
-          <pre className="font-mono text-sm text-slate-300 whitespace-pre-wrap">
-            {originalLines.map((line, i) => {
-              const isDifferent = currentLines[i] !== line;
-              return (
-                <div
-                  key={i}
-                  className={`${isDifferent ? 'bg-rose-500/20 text-rose-300' : ''}`}
-                  style={{ minHeight: lineHeight }}
-                >
-                  {line || ' '}
-                </div>
-              );
-            })}
-          </pre>
+      <div className="flex-1 flex flex-col overflow-hidden rounded-lg border border-slate-800">
+        {/* Diff Stats Header */}
+        <div className="flex items-center justify-between px-4 py-2 bg-slate-800/70 border-b border-slate-700 flex-shrink-0">
+          <div className="flex items-center space-x-4 text-xs">
+            <span className="text-slate-400 font-medium">Changes:</span>
+            {diffStats.added > 0 && <span className="text-emerald-400 font-semibold">+{diffStats.added} added</span>}
+            {diffStats.removed > 0 && <span className="text-rose-400 font-semibold">−{diffStats.removed} removed</span>}
+            <span className="text-slate-500">{diffStats.unchanged} unchanged</span>
+          </div>
+          {diffStats.added === 0 && diffStats.removed === 0 && (
+            <span className="text-xs text-slate-500 italic">No changes detected</span>
+          )}
         </div>
-        <div className="flex-1 overflow-auto p-4">
-          <div className="text-xs text-slate-400 mb-2 font-semibold">Current</div>
-          <pre className="font-mono text-sm text-slate-300 whitespace-pre-wrap">
-            {currentLines.map((line, i) => {
-              const isDifferent = originalLines[i] !== line;
-              const isNew = i >= originalLines.length;
-              return (
-                <div
-                  key={i}
-                  className={`${isDifferent || isNew ? 'bg-emerald-500/20 text-emerald-300' : ''}`}
-                  style={{ minHeight: lineHeight }}
-                >
-                  {line || ' '}
-                </div>
-              );
-            })}
-          </pre>
+
+        {/* Diff Panels */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Original Panel */}
+          <div className="flex-1 flex flex-col overflow-hidden border-r border-slate-700">
+            <div className="px-4 py-2 bg-slate-900/80 border-b border-slate-800 flex-shrink-0">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Original</span>
+            </div>
+            <div
+              ref={diffLeftRef}
+              className="flex-1 overflow-auto font-mono text-sm custom-scrollbar"
+              onScroll={() => handleDiffScroll('left')}
+            >
+              <div style={{ height: topSpacerHeight }} />
+              {visibleLines.map((line, vi) => {
+                const i = startLine + vi;
+                const isRemoved = line.type === 'removed';
+                const isModified = line.type === 'modified';
+                const isAdded = line.type === 'added';
+                return (
+                  <div
+                    key={i}
+                    className={`flex ${isRemoved || isModified ? 'bg-rose-500/15' : isAdded ? 'bg-emerald-500/5' : ''}`}
+                    style={{ height: rowHeight }}
+                  >
+                    <div className={`w-12 text-right pr-3 select-none flex-shrink-0 border-r border-slate-800 ${isRemoved || isModified ? 'text-rose-400/60' : isAdded ? 'text-slate-600' : 'text-slate-500'}`} style={{ lineHeight: `${rowHeight}px` }}>
+                      {line.originalNum > 0 ? line.originalNum : ' '}
+                    </div>
+                    <div className="w-6 flex items-center justify-center flex-shrink-0" style={{ lineHeight: `${rowHeight}px` }}>
+                      {(isRemoved || isModified) && <span className="text-xs font-bold text-rose-400">−</span>}
+                    </div>
+                    <div className={`flex-1 px-3 whitespace-pre overflow-hidden text-ellipsis ${isRemoved || isModified ? 'text-rose-300' : isAdded ? 'text-slate-600' : 'text-slate-300'}`} style={{ lineHeight: `${rowHeight}px` }}>
+                      {line.originalText || ' '}
+                    </div>
+                  </div>
+                );
+              })}
+              <div style={{ height: bottomSpacerHeight }} />
+            </div>
+          </div>
+
+          {/* Current Panel */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            <div className="px-4 py-2 bg-slate-900/80 border-b border-slate-800 flex-shrink-0">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Current</span>
+            </div>
+            <div
+              ref={diffRightRef}
+              className="flex-1 overflow-auto font-mono text-sm custom-scrollbar"
+              onScroll={() => handleDiffScroll('right')}
+            >
+              <div style={{ height: topSpacerHeight }} />
+              {visibleLines.map((line, vi) => {
+                const i = startLine + vi;
+                const isAdded = line.type === 'added';
+                const isModified = line.type === 'modified';
+                const isRemoved = line.type === 'removed';
+                return (
+                  <div
+                    key={i}
+                    className={`flex ${isAdded || isModified ? 'bg-emerald-500/15' : isRemoved ? 'bg-rose-500/5' : ''}`}
+                    style={{ height: rowHeight }}
+                  >
+                    <div className={`w-12 text-right pr-3 select-none flex-shrink-0 border-r border-slate-800 ${isAdded || isModified ? 'text-emerald-400/60' : isRemoved ? 'text-slate-600' : 'text-slate-500'}`} style={{ lineHeight: `${rowHeight}px` }}>
+                      {line.currentNum > 0 ? line.currentNum : ' '}
+                    </div>
+                    <div className="w-6 flex items-center justify-center flex-shrink-0" style={{ lineHeight: `${rowHeight}px` }}>
+                      {(isAdded || isModified) && <span className="text-xs font-bold text-emerald-400">+</span>}
+                    </div>
+                    <div className={`flex-1 px-3 whitespace-pre overflow-hidden text-ellipsis ${isAdded || isModified ? 'text-emerald-300' : isRemoved ? 'text-slate-600' : 'text-slate-300'}`} style={{ lineHeight: `${rowHeight}px` }}>
+                      {line.currentText || ' '}
+                    </div>
+                  </div>
+                );
+              })}
+              <div style={{ height: bottomSpacerHeight }} />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -894,8 +1321,8 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
             <div
               key={f.id}
               className={`flex items-center space-x-2 px-3 py-1.5 rounded-t-lg cursor-pointer transition-colors group ${f.id === activeFileId
-                  ? 'bg-slate-800 text-white border-b-2 border-indigo-500'
-                  : 'bg-slate-900/50 text-slate-400 hover:bg-slate-800/50'
+                ? 'bg-slate-800 text-white border-b-2 border-indigo-500'
+                : 'bg-slate-900/50 text-slate-400 hover:bg-slate-800/50'
                 }`}
               onClick={() => setActiveFileId(f.id)}
             >
@@ -964,7 +1391,7 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
             <Info className="w-5 h-5" />
           </button>
           <button
-            onClick={() => setShowDiff(!showDiff)}
+            onClick={toggleDiff}
             className={`p-2 rounded-lg transition-colors ${showDiff ? 'bg-indigo-500/20 text-indigo-400' : 'text-slate-400 hover:bg-slate-800'}`}
             title="Toggle Diff View"
           >
@@ -978,6 +1405,19 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
             >
               <Code className="w-5 h-5" />
             </button>
+          )}
+          {activeFile && isXcstringsFile(activeFile.name) && (
+            <>
+              <div className="h-6 w-px bg-slate-700 mx-1" />
+              <button
+                onClick={handleOpenDeleteLanguages}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-rose-400 hover:bg-rose-500/15 transition-colors border border-rose-500/20"
+                title="Delete Languages"
+              >
+                <Languages className="w-4 h-4" />
+                <span className="text-xs font-medium">Delete Languages</span>
+              </button>
+            </>
           )}
           {validationErrors.length > 0 && (
             <button
@@ -1059,6 +1499,7 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
           </div>
         </div>
       )}
+
 
       {/* Errors Panel */}
       {showErrors && validationErrors.length > 0 && (
@@ -1164,6 +1605,169 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
         </div>
       )}
 
+      {/* Delete Languages Modal */}
+      {showDeleteLanguages && xcstringsInfo && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50" onClick={() => { if (!deletionComplete) setShowDeleteLanguages(false); }}>
+          <div
+            className="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 w-full max-w-lg mx-4 overflow-hidden"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-700">
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 bg-rose-500/15 rounded-xl flex items-center justify-center">
+                  <Languages className="w-5 h-5 text-rose-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Delete Languages</h3>
+                  <p className="text-xs text-slate-400">{activeFile?.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDeleteLanguages(false)}
+                className="p-2 rounded-lg hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {!deletionComplete ? (
+              <>
+                {/* Select All / Count */}
+                <div className="flex items-center justify-between px-6 py-3 bg-slate-800/50 border-b border-slate-700/50">
+                  <button
+                    onClick={handleSelectAllLanguages}
+                    className="flex items-center space-x-2 text-sm text-slate-300 hover:text-white transition-colors"
+                  >
+                    {selectedLanguages.size === xcstringsInfo.languages.filter(l => l !== xcstringsInfo.sourceLanguage).length && selectedLanguages.size > 0
+                      ? <CheckSquare className="w-4 h-4 text-indigo-400" />
+                      : <Square className="w-4 h-4 text-slate-500" />}
+                    <span>Select All</span>
+                  </button>
+                  <span className="text-xs text-slate-500">
+                    {xcstringsInfo.languages.length} language{xcstringsInfo.languages.length !== 1 ? 's' : ''} found
+                    {selectedLanguages.size > 0 && <span className="text-rose-400 ml-2">({selectedLanguages.size} selected)</span>}
+                  </span>
+                </div>
+
+                {/* Language List */}
+                <div className="max-h-80 overflow-y-auto px-2 py-2 custom-scrollbar">
+                  {xcstringsInfo.languages.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <Languages className="w-10 h-10 mx-auto mb-2 opacity-40" />
+                      <p className="text-sm">No languages found in this file.</p>
+                    </div>
+                  ) : (
+                    xcstringsInfo.languages.map(lang => {
+                      const isSource = lang === xcstringsInfo.sourceLanguage;
+                      const isSelected = selectedLanguages.has(lang);
+                      return (
+                        <div
+                          key={lang}
+                          onClick={() => !isSource && handleToggleLanguage(lang)}
+                          className={`flex items-center justify-between px-4 py-3 mx-2 mb-1 rounded-xl transition-all cursor-pointer ${isSource
+                            ? 'bg-slate-700/30 cursor-not-allowed opacity-60'
+                            : isSelected
+                              ? 'bg-rose-500/15 border border-rose-500/30 hover:bg-rose-500/20'
+                              : 'hover:bg-slate-700/50 border border-transparent'
+                            }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            {isSource ? (
+                              <div className="w-5 h-5 rounded bg-slate-600/50 flex items-center justify-center">
+                                <Check className="w-3 h-3 text-slate-500" />
+                              </div>
+                            ) : isSelected ? (
+                              <CheckSquare className="w-5 h-5 text-rose-400" />
+                            ) : (
+                              <Square className="w-5 h-5 text-slate-500" />
+                            )}
+                            <div>
+                              <span className="font-mono text-sm font-semibold text-white">{lang}</span>
+                              <span className="text-slate-400 text-sm ml-2">{getLanguageDisplayName(lang)}</span>
+                            </div>
+                          </div>
+                          {isSource && (
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded-full">
+                              Source
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+
+                {/* Footer / Delete Button */}
+                <div className="px-6 py-4 border-t border-slate-700 flex items-center justify-between">
+                  <p className="text-xs text-slate-500">Source language cannot be deleted</p>
+                  <button
+                    onClick={handleDeleteLanguages}
+                    disabled={selectedLanguages.size === 0 || deletionProgress !== null}
+                    className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${selectedLanguages.size > 0 && deletionProgress === null
+                      ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-500/25 hover:shadow-rose-500/40'
+                      : 'bg-slate-700 text-slate-500 cursor-not-allowed'
+                      }`}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete {selectedLanguages.size > 0 ? `(${selectedLanguages.size})` : ''}</span>
+                  </button>
+                </div>
+
+                {/* Deletion Progress Overlay */}
+                {deletionProgress !== null && (
+                  <div className="absolute inset-0 bg-slate-800/95 backdrop-blur-sm rounded-2xl flex flex-col items-center justify-center z-10 p-8">
+                    <Loader2 className="w-10 h-10 text-rose-400 animate-spin mb-4" />
+                    <h4 className="text-lg font-bold text-white mb-2">Deleting Languages...</h4>
+                    <p className="text-sm text-slate-400 mb-5">
+                      Removing {selectedLanguages.size} language{selectedLanguages.size !== 1 ? 's' : ''} from all keys
+                    </p>
+                    <div className="w-full max-w-xs">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs text-slate-400">Progress</span>
+                        <span className="text-xs font-mono text-rose-400 font-bold">{deletionProgress}%</span>
+                      </div>
+                      <div className="w-full h-2.5 bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-rose-500 to-rose-400 rounded-full transition-all duration-200 ease-out"
+                          style={{ width: `${deletionProgress}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Post-Deletion Success View */
+              <div className="px-6 py-10 text-center">
+                <div className="w-16 h-16 bg-emerald-500/15 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-emerald-400" />
+                </div>
+                <h4 className="text-xl font-bold text-white mb-2">Languages Deleted</h4>
+                <p className="text-slate-400 text-sm mb-6">
+                  Successfully removed {deletedCount} language{deletedCount !== 1 ? 's' : ''} from the file.
+                </p>
+                <div className="flex items-center justify-center space-x-3">
+                  <button
+                    onClick={() => setShowDeleteLanguages(false)}
+                    className="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-300 bg-slate-700 hover:bg-slate-600 transition-colors"
+                  >
+                    Continue Editing
+                  </button>
+                  <button
+                    onClick={handleDownloadAndClose}
+                    className="flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold bg-indigo-500 hover:bg-indigo-600 text-white shadow-lg shadow-indigo-500/25 transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Updated File</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Context Menu */}
       {showContextMenu && (
         <div
@@ -1194,7 +1798,7 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
 
       {/* Editor Area */}
       {showDiff ? renderDiff() : (
-        <div className="flex-1 flex relative bg-slate-900/50 rounded-lg shadow-inner border border-slate-800 font-mono text-sm leading-6 overflow-hidden">
+        <div className="flex-1 flex bg-slate-900/50 rounded-lg shadow-inner border border-slate-800 font-mono text-sm leading-6 overflow-hidden">
           {/* Line Numbers */}
           <div
             ref={lineNumbersRef}
@@ -1204,32 +1808,31 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
             {lineNumbers}
           </div>
 
-          {/* Backdrop for syntax highlighting */}
-          <div
-            ref={backdropRef}
-            className="absolute left-12 right-0 top-0 bottom-0 p-4 overflow-auto pointer-events-none whitespace-pre-wrap break-words text-slate-300 custom-scrollbar"
-          >
-            <SyntaxHighlight
-              content={editedContent}
-              fileType={fileType}
-              findTerm={findTerm}
-              matches={allMatches}
-              currentMatchIndex={currentMatchIndex}
+          {/* Editor Content Area */}
+          <div className="flex-1 relative overflow-hidden">
+            {/* Textarea — always visible text, no syntax highlighting overlay */}
+            <textarea
+              ref={textareaRef}
+              value={editedContent}
+              onChange={(e) => setEditedContent(e.target.value)}
+              onScroll={handleScroll}
+              onContextMenu={handleContextMenu}
+              className="absolute inset-0 w-full h-full p-4 bg-transparent text-slate-300 caret-white resize-none focus:outline-none custom-scrollbar whitespace-pre"
+              style={{
+                fontFamily: 'inherit',
+                fontSize: 'inherit',
+                lineHeight: 'inherit',
+                letterSpacing: 'normal',
+                wordSpacing: 'normal',
+                tabSize: 2,
+                border: 'none',
+                outline: 'none',
+              }}
+              spellCheck="false"
+              wrap="off"
+              aria-label="File content editor"
             />
           </div>
-
-          {/* Textarea */}
-          <textarea
-            ref={textareaRef}
-            value={editedContent}
-            onChange={(e) => setEditedContent(e.target.value)}
-            onScroll={handleScroll}
-            onContextMenu={handleContextMenu}
-            className="flex-1 p-4 bg-transparent text-transparent caret-white resize-none focus:outline-none custom-scrollbar"
-            style={{ fontFamily: 'inherit', fontSize: 'inherit', lineHeight: 'inherit' }}
-            spellCheck="false"
-            aria-label="File content editor"
-          />
         </div>
       )}
     </div>
@@ -1264,6 +1867,44 @@ export const FileEditorView: React.FC<FileEditorViewProps> = ({ onBack }) => {
           multiple
         />
       </DragDropZone>
+
+      {/* Upload Progress Overlay */}
+      {uploadProgress && (
+        <div className="mt-6 w-full max-w-md">
+          <div className="bg-slate-800/80 border border-slate-700 rounded-xl p-5 shadow-xl">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-10 h-10 bg-indigo-500/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                {uploadProgress.percent < 100
+                  ? <Loader2 className="w-5 h-5 text-indigo-400 animate-spin" />
+                  : <Check className="w-5 h-5 text-emerald-400" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-white truncate">{uploadProgress.fileName}</p>
+                <p className="text-xs text-slate-400">
+                  {uploadProgress.percent < 100 ? 'Loading file...' : 'Complete!'}
+                  {' · '}
+                  {uploadProgress.size < 1024
+                    ? `${uploadProgress.size} B`
+                    : uploadProgress.size < 1024 * 1024
+                      ? `${(uploadProgress.size / 1024).toFixed(1)} KB`
+                      : `${(uploadProgress.size / 1024 / 1024).toFixed(1)} MB`}
+                </p>
+              </div>
+              <span className="text-sm font-mono font-bold text-indigo-400">{uploadProgress.percent}%</span>
+            </div>
+            <div className="w-full h-2 bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all duration-300 ease-out ${uploadProgress.percent < 100
+                  ? 'bg-gradient-to-r from-indigo-500 to-indigo-400'
+                  : 'bg-gradient-to-r from-emerald-500 to-emerald-400'
+                  }`}
+                style={{ width: `${uploadProgress.percent}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {error && <p className="text-sm text-rose-400 mt-6 bg-rose-500/10 px-6 py-3 rounded-xl border border-rose-500/20 animate-in fade-in slide-in-from-bottom-2">{error}</p>}
     </div>
   );

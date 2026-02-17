@@ -20,6 +20,10 @@ The **File Editor** is a powerful, code-aware editor designed for managing local
     - **Format**: Auto-format JSON content with one click.
     - **Context Menu**: Right-click to Copy, Duplicate, or Delete lines.
 - **File Stats**: Real-time word, line, character, and key counts.
+- **Delete Languages** (`.xcstrings` only):
+    - View all language codes present in the string catalog.
+    - Select and delete one or more languages while preserving the source language.
+    - Download the updated file after deletion.
 
 ## Usage
 1. **Open Files**:
@@ -35,3 +39,7 @@ The **File Editor** is a powerful, code-aware editor designed for managing local
 4. **Download**:
    - Click the **Download** icon to save the current file.
    - The editor will verify content before saving.
+5. **Delete Languages** (`.xcstrings` files):
+   - Click the **Delete Languages** button in the toolbar.
+   - Select languages to remove (source language is protected).
+   - Click **Delete** and then **Download Updated File** to save.
