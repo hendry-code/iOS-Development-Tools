@@ -501,7 +501,7 @@ const initialTools: Tool[] = [
     {
         id: 'renamer',
         title: 'Key Renamer',
-        description: 'Batch rename keys across multiple files',
+        description: 'Remap old keys to new ones by matching shared translation values',
         icon: Variable,
         color: 'from-pink-500 to-rose-400',
         glowColor: '#f43f5e',

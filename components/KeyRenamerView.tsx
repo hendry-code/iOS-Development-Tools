@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, X, Type, Trash2, Upload, Sparkles, FileText, FileJson, Download } from 'lucide-react';
+import { ArrowLeft, X, Type, Trash2, Upload, Sparkles, FileText, FileJson, Download, Info } from 'lucide-react';
 import { parseStringsFile } from '../services/converter';
 import { ParsedStrings } from '../types';
 import { DragDropZone } from './DragDropZone';
@@ -312,10 +312,70 @@ export const KeyRenamerView: React.FC<KeyRenamerViewProps> = ({ onBack }) => {
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-pink-400 to-rose-400 bg-clip-text text-transparent">
                         Key Renamer
                     </h1>
-                    <p className="text-slate-400 text-sm">Batch rename keys across files</p>
+                    <p className="text-slate-400 text-sm">Remap old keys to new ones by matching shared translation values</p>
                 </div>
                 {/* Header Actions */}
                 <div className="ml-auto flex items-center space-x-2">
+                    <div className="relative group">
+                        <button
+                            className="p-2 text-slate-400 hover:text-sky-400 hover:bg-sky-500/10 rounded-lg transition-colors"
+                            aria-label="Module info"
+                        >
+                            <Info size={18} />
+                        </button>
+                        <div className="absolute right-0 top-full mt-2 w-[360px] p-4 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl text-xs text-slate-300 leading-relaxed opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                            <p className="font-semibold text-white mb-1.5">How does this work?</p>
+                            <p className="mb-3">Renames keys in a localization file by matching translation values across old and new reference files.</p>
+
+                            {/* Flow Diagram */}
+                            <div className="bg-slate-900/80 rounded-lg p-3 mb-3 border border-slate-700/50">
+                                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-2">Example Flow</p>
+
+                                {/* Step 1: Source */}
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="w-4 h-4 rounded bg-blue-500/30 text-blue-400 flex items-center justify-center text-[9px] font-bold flex-shrink-0">1</span>
+                                    <div className="flex-1 bg-blue-500/10 border border-blue-500/30 rounded px-2 py-1 font-mono">
+                                        <span className="text-blue-300">login_btn</span> <span className="text-slate-600">=</span> <span className="text-slate-400">"Identifikohu"</span>
+                                    </div>
+                                </div>
+                                <div className="ml-2 pl-[5px] border-l-2 border-dashed border-slate-600 py-0.5">
+                                    <span className="text-[10px] text-slate-500 pl-2">↓ look up <code className="text-blue-300">login_btn</code> in Key-Comp</span>
+                                </div>
+
+                                {/* Step 2: Key-Comparable */}
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="w-4 h-4 rounded bg-purple-500/30 text-purple-400 flex items-center justify-center text-[9px] font-bold flex-shrink-0">2</span>
+                                    <div className="flex-1 bg-purple-500/10 border border-purple-500/30 rounded px-2 py-1 font-mono">
+                                        <span className="text-purple-300">login_btn</span> <span className="text-slate-600">=</span> <span className="text-amber-300 font-semibold">"Log In"</span>
+                                    </div>
+                                </div>
+                                <div className="ml-2 pl-[5px] border-l-2 border-dashed border-slate-600 py-0.5">
+                                    <span className="text-[10px] text-slate-500 pl-2">↓ search for value <code className="text-amber-300">"Log In"</code> in Value-Comps</span>
+                                </div>
+
+                                {/* Step 3: Value-Comparable */}
+                                <div className="flex items-center gap-2 mb-1.5">
+                                    <span className="w-4 h-4 rounded bg-emerald-500/30 text-emerald-400 flex items-center justify-center text-[9px] font-bold flex-shrink-0">3</span>
+                                    <div className="flex-1 bg-emerald-500/10 border border-emerald-500/30 rounded px-2 py-1 font-mono">
+                                        <span className="text-emerald-300 font-semibold">auth_login_button</span> <span className="text-slate-600">=</span> <span className="text-amber-300">"Log In"</span>
+                                    </div>
+                                </div>
+                                <div className="ml-2 pl-[5px] border-l-2 border-dashed border-slate-600 py-0.5">
+                                    <span className="text-[10px] text-slate-500 pl-2">↓ apply new key to source</span>
+                                </div>
+
+                                {/* Result */}
+                                <div className="flex items-center gap-2">
+                                    <span className="w-4 h-4 rounded bg-pink-500/30 text-pink-400 flex items-center justify-center text-[9px] font-bold flex-shrink-0">✓</span>
+                                    <div className="flex-1 bg-pink-500/10 border border-pink-500/30 rounded px-2 py-1 font-mono">
+                                        <span className="text-pink-300">auth_login_button</span> <span className="text-slate-600">=</span> <span className="text-slate-400">"Identifikohu"</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p className="text-slate-500 text-[10px]">The source file keeps its original values — only the keys are renamed to match the new convention.</p>
+                        </div>
+                    </div>
                     <button
                         onClick={handleExecuteSample}
                         className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
