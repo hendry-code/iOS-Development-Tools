@@ -597,7 +597,7 @@ const initialTools: Tool[] = [
         icon: Terminal,
         color: 'from-rose-500 to-pink-400',
         glowColor: '#f43f5e',
-        category: 'utilities',
+        category: 'localization',
     },
     {
         id: 'mock-data',

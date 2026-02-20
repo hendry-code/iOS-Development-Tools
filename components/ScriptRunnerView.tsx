@@ -1,6 +1,6 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Editor from '@monaco-editor/react';
-import { ArrowLeft, Play, Upload, Trash2, Copy, FileText, Terminal, Code2, File, Info, X, Check, Sparkles } from 'lucide-react';
+import { ArrowLeft, Play, Upload, Trash2, Copy, FileText, Terminal, Code2, File, Info, X, Check, Sparkles, ChevronDown, Download } from 'lucide-react';
 import { DragDropZone } from './DragDropZone';
 import { ResizableLayout } from './ResizableLayout';
 import { VerticalSplitPane } from './VerticalSplitPane';
@@ -17,30 +17,45 @@ interface ScriptFile {
     type: string;
 }
 
+interface OutputFile {
+    name: string;
+    content: string;
+    size: number;
+}
+
 declare global {
     interface Window {
         loadPyodide: (config: { indexURL: string }) => Promise<any>;
     }
 }
 
-// --- Sample Data ---
-const SAMPLE_SOURCE_FILE = {
-    name: 'sample_apps.json',
-    content: JSON.stringify([
-        { name: 'PhotoSync Pro', version: '3.2.1', platform: 'iOS', downloads: 142500, rating: 4.7 },
-        { name: 'TaskFlow', version: '1.8.0', platform: 'iOS', downloads: 89300, rating: 4.5 },
-        { name: 'BudgetWise', version: '2.0.4', platform: 'iPadOS', downloads: 51200, rating: 4.2 },
-        { name: 'FitTrack Elite', version: '5.1.0', platform: 'iOS', downloads: 230000, rating: 4.9 },
-        { name: 'NoteVault', version: '1.3.2', platform: 'macOS', downloads: 34800, rating: 4.0 }
-    ], null, 2),
-    size: 0, // will be calculated
-    type: 'json'
-};
-SAMPLE_SOURCE_FILE.size = new Blob([SAMPLE_SOURCE_FILE.content]).size;
+// --- Sample Data for Multiple File Types ---
+interface SampleEntry {
+    label: string;
+    badge: string;
+    badgeColor: string;
+    fileName: string;
+    fileType: string;
+    content: string;
+    script: string;
+}
 
-const SAMPLE_SCRIPT = `// 📊 App Analytics Report
-// This script demonstrates how to read uploaded files,
-// parse JSON data, and produce a formatted report.
+const SAMPLES: SampleEntry[] = [
+    {
+        label: 'JSON File (.json)',
+        badge: 'JSON',
+        badgeColor: 'from-yellow-500 to-amber-600',
+        fileName: 'sample_apps.json',
+        fileType: 'json',
+        content: JSON.stringify([
+            { name: 'PhotoSync Pro', version: '3.2.1', platform: 'iOS', downloads: 142500, rating: 4.7 },
+            { name: 'TaskFlow', version: '1.8.0', platform: 'iOS', downloads: 89300, rating: 4.5 },
+            { name: 'BudgetWise', version: '2.0.4', platform: 'iPadOS', downloads: 51200, rating: 4.2 },
+            { name: 'FitTrack Elite', version: '5.1.0', platform: 'iOS', downloads: 230000, rating: 4.9 },
+            { name: 'NoteVault', version: '1.3.2', platform: 'macOS', downloads: 34800, rating: 4.0 }
+        ], null, 2),
+        script: `// 📊 App Analytics Report
+// Demonstrates JSON parsing and data aggregation.
 
 const file = files[0];
 const apps = JSON.parse(file.content);
@@ -48,7 +63,6 @@ const apps = JSON.parse(file.content);
 console.log("📁 Processing: " + file.name);
 console.log("   Found " + apps.length + " apps\\n");
 
-// Calculate stats
 const totalDownloads = apps.reduce((sum, a) => sum + a.downloads, 0);
 const avgRating = (apps.reduce((sum, a) => sum + a.rating, 0) / apps.length).toFixed(1);
 const topApp = apps.reduce((best, a) => a.downloads > best.downloads ? a : best);
@@ -58,14 +72,12 @@ console.log("⭐ Average Rating:  " + avgRating);
 console.log("🏆 Top App:         " + topApp.name + " (" + topApp.downloads.toLocaleString() + " downloads)");
 console.log("");
 
-// Per-app breakdown
 apps.sort((a, b) => b.downloads - a.downloads);
 apps.forEach((app, i) => {
     const bar = "█".repeat(Math.round(app.downloads / totalDownloads * 30));
     console.log((i + 1) + ". " + app.name.padEnd(16) + " v" + app.version + "  ⭐" + app.rating + "  " + bar + " " + app.downloads.toLocaleString());
 });
 
-// Return a summary object
 return {
     file: file.name,
     totalApps: apps.length,
@@ -73,13 +85,773 @@ return {
     averageRating: parseFloat(avgRating),
     topApp: topApp.name
 };
-`;
+`,
+    },
+    {
+        label: 'Text File (.txt)',
+        badge: 'TXT',
+        badgeColor: 'from-slate-400 to-slate-500',
+        fileName: 'sample_notes.txt',
+        fileType: 'txt',
+        content: `Meeting Notes - iOS Localization Sprint
+========================================
+
+Date: February 2026
+Team: Mobile Platform
+
+Agenda:
+1. Migrate all .strings files to .xcstrings catalogs
+2. Audit untranslated keys across 12 languages
+3. Automate plural rule validation for Turkish and Arabic
+4. Set up CI checks for missing translations
+
+Action Items:
+- [ ] Export current .strings to .xcstrings using the converter tool
+- [ ] Run String Analyser on all catalogs to find gaps
+- [ ] Add unit tests for stringsdict plural variations
+- [x] Update build scripts to support new catalog format
+- [x] Document the migration process for other teams
+
+Notes:
+The new xcstrings format provides better plural handling and
+reduces merge conflicts in Git. All teams should migrate by Q2.
+
+Attendees: Alice, Bob, Charlie, Diana, Eve
+`,
+        script: `// 📝 Text File Analyser
+// Demonstrates line-by-line text processing, word counting,
+// and pattern matching on plain text files.
+
+const file = files[0];
+const content = file.content;
+const lines = content.split('\\n');
+
+console.log("📄 File: " + file.name);
+console.log("   Size: " + file.size + " bytes\\n");
+
+// Basic stats
+const nonEmpty = lines.filter(l => l.trim().length > 0);
+const words = content.split(/\\s+/).filter(w => w.length > 0);
+const chars = content.replace(/\\s/g, '').length;
+
+console.log("📊 Statistics:");
+console.log("   Total lines:     " + lines.length);
+console.log("   Non-empty lines: " + nonEmpty.length);
+console.log("   Word count:      " + words.length);
+console.log("   Characters:      " + chars);
+console.log("");
+
+// Find checklist items
+const todos = lines.filter(l => l.includes('[ ]'));
+const done  = lines.filter(l => l.includes('[x]'));
+
+console.log("✅ Checklist:");
+console.log("   Completed: " + done.length);
+console.log("   Remaining: " + todos.length);
+todos.forEach(t => console.log("   ⬜ " + t.trim()));
+
+return { lines: lines.length, words: words.length, todos: todos.length, done: done.length };
+`,
+    },
+    {
+        label: 'String Catalog (.xcstrings)',
+        badge: 'XCS',
+        badgeColor: 'from-blue-500 to-indigo-600',
+        fileName: 'Localizable.xcstrings',
+        fileType: 'xcstrings',
+        content: JSON.stringify({
+            sourceLanguage: 'en',
+            version: '1.0',
+            strings: {
+                welcome_title: {
+                    extractionState: 'manual',
+                    localizations: {
+                        en: { stringUnit: { state: 'translated', value: 'Welcome' } },
+                        fr: { stringUnit: { state: 'translated', value: 'Bienvenue' } },
+                        de: { stringUnit: { state: 'translated', value: 'Willkommen' } },
+                        ja: { stringUnit: { state: 'translated', value: 'ようこそ' } },
+                        es: { stringUnit: { state: 'needs_review', value: 'Bienvenido' } }
+                    }
+                },
+                login_button: {
+                    extractionState: 'manual',
+                    localizations: {
+                        en: { stringUnit: { state: 'translated', value: 'Sign In' } },
+                        fr: { stringUnit: { state: 'translated', value: 'Se connecter' } },
+                        de: { stringUnit: { state: 'translated', value: 'Anmelden' } }
+                    }
+                },
+                items_count: {
+                    extractionState: 'manual',
+                    localizations: {
+                        en: {
+                            variations: {
+                                plural: {
+                                    one: { stringUnit: { state: 'translated', value: '%lld item' } },
+                                    other: { stringUnit: { state: 'translated', value: '%lld items' } }
+                                }
+                            }
+                        },
+                        fr: {
+                            variations: {
+                                plural: {
+                                    one: { stringUnit: { state: 'translated', value: '%lld élément' } },
+                                    other: { stringUnit: { state: 'translated', value: '%lld éléments' } }
+                                }
+                            }
+                        }
+                    }
+                },
+                settings_title: {
+                    extractionState: 'manual',
+                    localizations: {
+                        en: { stringUnit: { state: 'translated', value: 'Settings' } }
+                    }
+                },
+                delete_confirm: {
+                    extractionState: 'manual',
+                    comment: 'Shown when user tries to delete an item',
+                    localizations: {
+                        en: { stringUnit: { state: 'translated', value: 'Are you sure you want to delete this?' } },
+                        fr: { stringUnit: { state: 'translated', value: 'Voulez-vous vraiment supprimer ceci ?' } },
+                        de: { stringUnit: { state: 'translated', value: 'Möchten Sie das wirklich löschen?' } },
+                        ja: { stringUnit: { state: 'translated', value: 'これを削除してもよろしいですか？' } },
+                        es: { stringUnit: { state: 'translated', value: '¿Está seguro de que desea eliminar esto?' } }
+                    }
+                }
+            }
+        }, null, 2),
+        script: `// 🌍 XCStrings Catalog Analyser
+// Demonstrates how to parse an .xcstrings file (JSON-based),
+// list all keys, languages, and find missing translations.
+
+const file = files[0];
+const catalog = JSON.parse(file.content);
+
+console.log("📦 String Catalog: " + file.name);
+console.log("   Source Language: " + catalog.sourceLanguage);
+console.log("   Version: " + catalog.version + "\\n");
+
+const keys = Object.keys(catalog.strings);
+console.log("🔑 Total Keys: " + keys.length);
+
+// Collect all languages
+const allLanguages = new Set();
+keys.forEach(key => {
+    const locs = catalog.strings[key].localizations || {};
+    Object.keys(locs).forEach(lang => allLanguages.add(lang));
+});
+const languages = Array.from(allLanguages).sort();
+console.log("🌐 Languages: " + languages.join(", ") + "\\n");
+
+// Per-key breakdown
+console.log("📋 Key Details:");
+console.log("─".repeat(60));
+
+const missing = [];
+keys.forEach(key => {
+    const entry = catalog.strings[key];
+    const locs = entry.localizations || {};
+    const translatedLangs = Object.keys(locs);
+    const missingLangs = languages.filter(l => !translatedLangs.includes(l));
+    const hasPlurals = Object.values(locs).some(l => l.variations);
+
+    let status = "✅";
+    if (missingLangs.length > 0) status = "⚠️";
+
+    console.log(status + " " + key);
+    console.log("   Translated: " + translatedLangs.join(", "));
+    if (hasPlurals) console.log("   📐 Has plural variations");
+    if (missingLangs.length > 0) {
+        console.log("   ❌ Missing: " + missingLangs.join(", "));
+        missing.push({ key, missingLangs });
+    }
+});
+
+console.log("\\n📊 Summary:");
+console.log("   Total keys:    " + keys.length);
+console.log("   Languages:     " + languages.length);
+console.log("   Fully translated: " + (keys.length - missing.length));
+console.log("   Missing translations: " + missing.length);
+
+return { keys: keys.length, languages: languages.length, missing: missing.length };
+`,
+    },
+    {
+        label: 'Strings File (.strings)',
+        badge: 'STR',
+        badgeColor: 'from-emerald-500 to-green-600',
+        fileName: 'Localizable.strings',
+        fileType: 'strings',
+        content: `/* General */
+"app_name" = "My Awesome App";
+"ok_button" = "OK";
+"cancel_button" = "Cancel";
+
+/* Authentication */
+"login_title" = "Welcome Back";
+"login_email_placeholder" = "Enter your email";
+"login_password_placeholder" = "Enter your password";
+"login_submit" = "Sign In";
+"login_forgot_password" = "Forgot Password?";
+"login_create_account" = "Create Account";
+
+/* Home Screen */
+"home_greeting" = "Hello, %@!";
+"home_subtitle" = "What would you like to do today?";
+"home_recent_items" = "Recent Items";
+"home_no_items" = "No items yet. Tap + to add one.";
+
+/* Settings */
+"settings_title" = "Settings";
+"settings_notifications" = "Notifications";
+"settings_dark_mode" = "Dark Mode";
+"settings_language" = "Language";
+"settings_version" = "Version %@ (Build %@)";
+
+/* Errors */
+"error_network" = "Unable to connect. Please check your internet connection.";
+"error_generic" = "Something went wrong. Please try again.";
+"error_invalid_email" = "Please enter a valid email address.";
+`,
+        script: `// 📜 .strings File Parser
+// Demonstrates how to parse iOS .strings key-value pairs,
+// detect comments/sections, and validate the format.
+
+const file = files[0];
+const lines = file.content.split('\\n');
+
+console.log("📄 Parsing: " + file.name);
+console.log("   Lines: " + lines.length + "\\n");
+
+const entries = [];
+const sections = [];
+let currentSection = "(No Section)";
+const errors = [];
+
+lines.forEach((line, i) => {
+    const trimmed = line.trim();
+
+    // Detect section comments like /* Section Name */
+    const sectionMatch = trimmed.match(/^\\/\\*\\s*(.+?)\\s*\\*\\//);
+    if (sectionMatch) {
+        currentSection = sectionMatch[1];
+        sections.push(currentSection);
+        return;
+    }
+
+    // Parse key = value pairs
+    const kvMatch = trimmed.match(/^"(.+?)"\\s*=\\s*"(.*)";\\s*$/);
+    if (kvMatch) {
+        entries.push({ key: kvMatch[1], value: kvMatch[2], section: currentSection, line: i + 1 });
+        return;
+    }
+
+    // Flag non-empty lines that don't match expected patterns
+    if (trimmed.length > 0 && !trimmed.startsWith('//')) {
+        errors.push({ line: i + 1, content: trimmed });
+    }
+});
+
+// Print sections
+console.log("📂 Sections Found: " + sections.length);
+sections.forEach(s => console.log("   • " + s));
+console.log("");
+
+// Print entries grouped by section
+console.log("🔑 Parsed Entries: " + entries.length);
+console.log("─".repeat(55));
+
+let lastSection = "";
+entries.forEach(e => {
+    if (e.section !== lastSection) {
+        console.log("\\n  [" + e.section + "]");
+        lastSection = e.section;
+    }
+    const preview = e.value.length > 35 ? e.value.substring(0, 35) + "…" : e.value;
+    console.log("   " + e.key.padEnd(30) + " → " + preview);
+});
+
+// Check for duplicates
+const keySet = new Set();
+const duplicates = [];
+entries.forEach(e => {
+    if (keySet.has(e.key)) duplicates.push(e.key);
+    keySet.add(e.key);
+});
+
+console.log("\\n📊 Summary:");
+console.log("   Entries:    " + entries.length);
+console.log("   Sections:   " + sections.length);
+console.log("   Duplicates: " + duplicates.length);
+if (errors.length > 0) {
+    console.log("   ⚠️ Format warnings: " + errors.length);
+    errors.forEach(e => console.log("     Line " + e.line + ": " + e.content));
+}
+
+return { entries: entries.length, sections: sections.length, duplicates: duplicates.length };
+`,
+    },
+    {
+        label: 'Strings Dict (.stringsdict)',
+        badge: 'DICT',
+        badgeColor: 'from-purple-500 to-violet-600',
+        fileName: 'Localizable.stringsdict',
+        fileType: 'stringsdict',
+        content: `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>items_count</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@items@</string>
+        <key>items</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>zero</key>
+            <string>No items</string>
+            <key>one</key>
+            <string>%d item</string>
+            <key>other</key>
+            <string>%d items</string>
+        </dict>
+    </dict>
+    <key>days_remaining</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@days@</string>
+        <key>days</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>zero</key>
+            <string>No days remaining</string>
+            <key>one</key>
+            <string>%d day remaining</string>
+            <key>two</key>
+            <string>%d days remaining</string>
+            <key>few</key>
+            <string>%d days remaining</string>
+            <key>many</key>
+            <string>%d days remaining</string>
+            <key>other</key>
+            <string>%d days remaining</string>
+        </dict>
+    </dict>
+    <key>unread_messages</key>
+    <dict>
+        <key>NSStringLocalizedFormatKey</key>
+        <string>%#@messages@</string>
+        <key>messages</key>
+        <dict>
+            <key>NSStringFormatSpecTypeKey</key>
+            <string>NSStringPluralRuleType</string>
+            <key>NSStringFormatValueTypeKey</key>
+            <string>d</string>
+            <key>one</key>
+            <string>%d unread message</string>
+            <key>other</key>
+            <string>%d unread messages</string>
+        </dict>
+    </dict>
+</dict>
+</plist>`,
+        script: `// 📐 .stringsdict Plural Rules Analyser
+// Demonstrates parsing .stringsdict plist XML to extract
+// plural rule keys and their variations.
+
+const file = files[0];
+const content = file.content;
+
+console.log("📄 Parsing: " + file.name);
+console.log("   Type: stringsdict (Plist XML)\\n");
+
+// Simple XML tag parser for plist structure
+const keyRegex = /<key>([^<]+)<\\/key>/g;
+const stringRegex = /<string>([^<]*)<\\/string>/g;
+
+// Extract all key-string pairs
+const allKeys = [];
+let match;
+while ((match = keyRegex.exec(content)) !== null) {
+    allKeys.push({ tag: 'key', value: match[1], index: match.index });
+}
+
+// Find top-level plural rule keys (direct children of root dict)
+// These are keys followed by a dict containing NSStringLocalizedFormatKey
+const pluralRules = [];
+const knownPluralForms = ['zero', 'one', 'two', 'few', 'many', 'other'];
+let currentKey = null;
+let insideRule = false;
+let currentForms = [];
+let formatKey = null;
+
+const lines = content.split('\\n');
+let depth = 0;
+let ruleDepth = -1;
+
+lines.forEach(line => {
+    const trimmed = line.trim();
+
+    if (trimmed === '<dict>') depth++;
+    if (trimmed === '</dict>') {
+        if (depth === ruleDepth && insideRule) {
+            pluralRules.push({
+                key: currentKey,
+                formatKey: formatKey,
+                forms: [...currentForms]
+            });
+            insideRule = false;
+            currentForms = [];
+            formatKey = null;
+        }
+        depth--;
+    }
+
+    const km = trimmed.match(/^<key>(.+?)<\\/key>$/);
+    if (km) {
+        const k = km[1];
+        if (depth === 1) {
+            currentKey = k;
+        }
+        if (k === 'NSStringLocalizedFormatKey') {
+            insideRule = true;
+            ruleDepth = depth;
+        }
+        if (insideRule && knownPluralForms.includes(k)) {
+            currentForms.push(k);
+        }
+    }
+
+    const sm = trimmed.match(/^<string>(.+?)<\\/string>$/);
+    if (sm && insideRule && !formatKey && trimmed.includes('%#@')) {
+        formatKey = sm[1];
+    }
+});
+
+console.log("🔑 Plural Rules Found: " + pluralRules.length);
+console.log("─".repeat(55));
+
+pluralRules.forEach((rule, i) => {
+    console.log("\\n" + (i + 1) + ". " + rule.key);
+    console.log("   Format: " + (rule.formatKey || 'N/A'));
+    console.log("   Forms:  " + rule.forms.join(", "));
+    const missingForms = knownPluralForms.filter(f => !rule.forms.includes(f));
+    if (missingForms.length > 0 && missingForms.length < 5) {
+        console.log("   ⚠️ Optional missing: " + missingForms.join(", "));
+    }
+});
+
+console.log("\\n📊 Summary:");
+console.log("   Total plural keys: " + pluralRules.length);
+const totalForms = pluralRules.reduce((sum, r) => sum + r.forms.length, 0);
+console.log("   Total variations:  " + totalForms);
+
+return { pluralKeys: pluralRules.length, totalVariations: totalForms };
+`,
+    },
+    {
+        label: 'Android XML (.xml)',
+        badge: 'XML',
+        badgeColor: 'from-orange-500 to-red-600',
+        fileName: 'strings.xml',
+        fileType: 'xml',
+        content: `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App Info -->
+    <string name="app_name">My Application</string>
+    <string name="app_tagline">Build something amazing</string>
+
+    <!-- Authentication -->
+    <string name="login_title">Welcome Back</string>
+    <string name="login_email_hint">Email address</string>
+    <string name="login_password_hint">Password</string>
+    <string name="login_button">Sign In</string>
+    <string name="login_forgot">Forgot your password?</string>
+    <string name="signup_button">Create Account</string>
+
+    <!-- Home Screen -->
+    <string name="home_greeting">Hello, %1$s!</string>
+    <string name="home_subtitle">What\'s on your mind today?</string>
+
+    <!-- Plurals -->
+    <plurals name="items_count">
+        <item quantity="one">%d item</item>
+        <item quantity="other">%d items</item>
+    </plurals>
+    <plurals name="photos_count">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+
+    <!-- String Arrays -->
+    <string-array name="planets">
+        <item>Mercury</item>
+        <item>Venus</item>
+        <item>Earth</item>
+        <item>Mars</item>
+        <item>Jupiter</item>
+    </string-array>
+
+    <!-- Errors -->
+    <string name="error_network">Network error. Please try again.</string>
+    <string name="error_timeout">Request timed out.</string>
+    <string name="error_unknown">An unexpected error occurred.</string>
+</resources>`,
+        script: `// 📱 Android XML Resources Analyser
+// Demonstrates parsing Android strings.xml to extract
+// <string>, <plurals>, and <string-array> resources.
+
+const file = files[0];
+const content = file.content;
+
+console.log("📄 Parsing: " + file.name);
+console.log("   Type: Android resources XML\\n");
+
+// Extract <string> elements
+const stringRegex = /<string\\s+name="([^"]+)">(.*?)<\\/string>/g;
+const strings = [];
+let m;
+while ((m = stringRegex.exec(content)) !== null) {
+    strings.push({ name: m[1], value: m[2] });
+}
+
+// Extract <plurals> elements
+const pluralsRegex = /<plurals\\s+name="([^"]+)">[\\s\\S]*?<\\/plurals>/g;
+const itemRegex = /<item\\s+quantity="([^"]+)">(.*?)<\\/item>/g;
+const plurals = [];
+while ((m = pluralsRegex.exec(content)) !== null) {
+    const items = [];
+    let im;
+    while ((im = itemRegex.exec(m[0])) !== null) {
+        items.push({ quantity: im[1], value: im[2] });
+    }
+    plurals.push({ name: m[1], items });
+}
+
+// Extract <string-array> elements
+const arrayRegex = /<string-array\\s+name="([^"]+)">[\\s\\S]*?<\\/string-array>/g;
+const simpleItemRegex = /<item>(.*?)<\\/item>/g;
+const arrays = [];
+while ((m = arrayRegex.exec(content)) !== null) {
+    const items = [];
+    let im;
+    while ((im = simpleItemRegex.exec(m[0])) !== null) {
+        items.push(im[1]);
+    }
+    arrays.push({ name: m[1], items });
+}
+
+// Extract comments as sections
+const commentRegex = /<!--\\s*(.+?)\\s*-->/g;
+const sections = [];
+while ((m = commentRegex.exec(content)) !== null) {
+    sections.push(m[1]);
+}
+
+console.log("📂 Sections: " + sections.join(" | "));
+console.log("");
+
+// Print strings
+console.log("📝 Strings (" + strings.length + "):");
+console.log("─".repeat(55));
+strings.forEach(s => {
+    const preview = s.value.length > 40 ? s.value.substring(0, 40) + "…" : s.value;
+    console.log("   " + s.name.padEnd(25) + " → " + preview);
+});
+
+// Print plurals
+if (plurals.length > 0) {
+    console.log("\\n📐 Plurals (" + plurals.length + "):");
+    console.log("─".repeat(55));
+    plurals.forEach(p => {
+        console.log("   " + p.name + ":");
+        p.items.forEach(it => console.log("     [" + it.quantity + "] " + it.value));
+    });
+}
+
+// Print arrays
+if (arrays.length > 0) {
+    console.log("\\n📚 String Arrays (" + arrays.length + "):");
+    console.log("─".repeat(55));
+    arrays.forEach(a => {
+        console.log("   " + a.name + ": [" + a.items.join(", ") + "]");
+    });
+}
+
+console.log("\\n📊 Summary:");
+console.log("   Strings:       " + strings.length);
+console.log("   Plural groups: " + plurals.length);
+console.log("   String arrays: " + arrays.length);
+
+return { strings: strings.length, plurals: plurals.length, arrays: arrays.length };
+`,
+    },
+    // --- Transform Samples (demonstrate output() API) ---
+    {
+        label: 'XCStrings — Add Missing Keys',
+        badge: '✏️',
+        badgeColor: 'from-cyan-500 to-blue-600',
+        fileName: 'Localizable.xcstrings',
+        fileType: 'xcstrings',
+        content: JSON.stringify({
+            sourceLanguage: 'en',
+            version: '1.0',
+            strings: {
+                welcome_title: {
+                    extractionState: 'manual',
+                    localizations: {
+                        en: { stringUnit: { state: 'translated', value: 'Welcome' } },
+                        fr: { stringUnit: { state: 'translated', value: 'Bienvenue' } },
+                        de: { stringUnit: { state: 'translated', value: 'Willkommen' } }
+                    }
+                },
+                login_button: {
+                    extractionState: 'manual',
+                    localizations: {
+                        en: { stringUnit: { state: 'translated', value: 'Sign In' } }
+                    }
+                },
+                settings_title: {
+                    extractionState: 'manual',
+                    localizations: {
+                        en: { stringUnit: { state: 'translated', value: 'Settings' } },
+                        fr: { stringUnit: { state: 'translated', value: 'Paramètres' } }
+                    }
+                }
+            }
+        }, null, 2),
+        script: `// ✏️ XCStrings — Add Missing Translations
+// This script finds keys with missing language translations
+// and adds placeholder entries. The modified catalog is
+// emitted as a downloadable file via output().
+
+const file = files[0];
+const catalog = JSON.parse(file.content);
+const keys = Object.keys(catalog.strings);
+
+// Collect all languages used across the catalog
+const allLangs = new Set();
+keys.forEach(key => {
+    const locs = catalog.strings[key].localizations || {};
+    Object.keys(locs).forEach(l => allLangs.add(l));
+});
+const languages = Array.from(allLangs).sort();
+
+console.log("🌍 Languages found: " + languages.join(", "));
+console.log("🔑 Total keys: " + keys.length + "\\n");
+
+let addedCount = 0;
+keys.forEach(key => {
+    const entry = catalog.strings[key];
+    if (!entry.localizations) entry.localizations = {};
+
+    const existing = Object.keys(entry.localizations);
+    const missing = languages.filter(l => !existing.includes(l));
+
+    if (missing.length > 0) {
+        const englishValue = entry.localizations.en?.stringUnit?.value || key;
+        missing.forEach(lang => {
+            entry.localizations[lang] = {
+                stringUnit: {
+                    state: 'needs_review',
+                    value: "[" + lang.toUpperCase() + "] " + englishValue
+                }
+            };
+            addedCount++;
+        });
+        console.log("  ✅ " + key + "  ← added: " + missing.join(", "));
+    }
+});
+
+console.log("\\n📊 Added " + addedCount + " placeholder translations.");
+
+// Emit the modified catalog as a downloadable file
+output("Localizable_Complete.xcstrings", JSON.stringify(catalog, null, 2));
+
+return { keysProcessed: keys.length, translationsAdded: addedCount };
+`,
+    },
+    {
+        label: 'Strings — Sort Keys A-Z',
+        badge: '🔤',
+        badgeColor: 'from-lime-500 to-emerald-600',
+        fileName: 'Localizable.strings',
+        fileType: 'strings',
+        content: `/* Navigation */
+"tab_settings" = "Settings";
+"tab_home" = "Home";
+"tab_profile" = "Profile";
+"tab_search" = "Search";
+
+/* Messages */
+"msg_welcome" = "Welcome back!";
+"msg_goodbye" = "See you later!";
+"msg_error" = "Something went wrong.";
+"msg_confirm" = "Are you sure?";
+
+/* Buttons */
+"btn_submit" = "Submit";
+"btn_cancel" = "Cancel";
+"btn_delete" = "Delete";
+"btn_add" = "Add New";
+`,
+        script: `// 🔤 Strings — Sort Keys Alphabetically
+// This script parses a .strings file, sorts all key-value
+// pairs alphabetically, and outputs a clean sorted file.
+
+const file = files[0];
+const lines = file.content.split('\\n');
+
+console.log("📄 Parsing: " + file.name + "\\n");
+
+// Parse all entries and comments
+const entries = [];
+lines.forEach(line => {
+    const trimmed = line.trim();
+    const kvMatch = trimmed.match(/^"(.+?)"\\s*=\\s*"(.*)";\\s*$/);
+    if (kvMatch) {
+        entries.push({ key: kvMatch[1], value: kvMatch[2] });
+    }
+});
+
+console.log("🔑 Found " + entries.length + " entries");
+
+// Sort alphabetically by key
+entries.sort((a, b) => a.key.localeCompare(b.key));
+
+console.log("🔤 Sorted A → Z\\n");
+
+// Build the sorted output
+const sortedLines = entries.map(e => '"' + e.key + '" = "' + e.value + '";');
+const sortedContent = sortedLines.join('\\n') + '\\n';
+
+// Log the sorted result
+entries.forEach((e, i) => {
+    console.log((i + 1).toString().padStart(2) + ". " + e.key);
+});
+
+// Emit the sorted file for download
+output("Localizable_Sorted.strings", sortedContent);
+
+console.log("\\n✅ Sorted file emitted for download.");
+return { totalEntries: entries.length };
+`,
+    },
+];
 
 export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) => {
     const [files, setFiles] = useState<ScriptFile[]>([]);
     const [script, setScript] = useState<string>('');
     const [output, setOutput] = useState<string>('');
     const [consoleOutput, setConsoleOutput] = useState<string[]>([]);
+    const [outputFiles, setOutputFiles] = useState<OutputFile[]>([]);
     const [showHelp, setShowHelp] = useState(false);
     const [copiedSnippet, setCopiedSnippet] = useState<string | null>(null);
     const [language, setLanguage] = useState<'javascript' | 'python'>('javascript');
@@ -87,9 +859,24 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
     const [pyodide, setPyodide] = useState<any>(null);
 
     const [isRunningSample, setIsRunningSample] = useState(false);
+    const [showSampleMenu, setShowSampleMenu] = useState(false);
+    const sampleMenuRef = useRef<HTMLDivElement>(null);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
     const scriptInputRef = useRef<HTMLInputElement>(null);
+
+    // Close sample menu on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (sampleMenuRef.current && !sampleMenuRef.current.contains(e.target as Node)) {
+                setShowSampleMenu(false);
+            }
+        };
+        if (showSampleMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showSampleMenu]);
 
     const formatSize = (bytes: number) => {
         if (bytes === 0) return '0 B';
@@ -134,24 +921,42 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
         }
     };
 
+    const handleDownloadFile = (file: OutputFile) => {
+        const blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = file.name;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    };
+
     const handleRun = async () => {
         setConsoleOutput([]);
         setOutput('');
+        setOutputFiles([]);
 
         if (language === 'javascript') {
             try {
                 const logs: string[] = [];
+                const emittedFiles: OutputFile[] = [];
                 const safeConsole = {
                     log: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
                     info: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
                     warn: (...args: any[]) => logs.push("[WARN] " + args.map(a => String(a)).join(' ')),
                     error: (...args: any[]) => logs.push("[ERROR] " + args.map(a => String(a)).join(' ')),
                 };
+                const safeOutput = (name: string, content: string) => {
+                    emittedFiles.push({ name, content, size: new Blob([content]).size });
+                };
 
-                const runScript = new Function('files', 'console', script);
-                const result = runScript(files, safeConsole);
+                const runScript = new Function('files', 'console', 'output', script);
+                const result = runScript(files, safeConsole, safeOutput);
 
                 setConsoleOutput(logs);
+                setOutputFiles(emittedFiles);
 
                 if (result !== undefined) {
                     if (typeof result === 'object') {
@@ -170,12 +975,18 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
             // Python execution
             try {
                 const py = await loadPyodideRuntime();
+                const emittedFiles: OutputFile[] = [];
 
                 // Redirect Python stdout to our console
                 py.setStdout({
                     batched: (msg: string) => {
                         setConsoleOutput(prev => [...prev, msg]);
                     }
+                });
+
+                // Register output() function for Python
+                py.globals.set("_js_output", (name: string, content: string) => {
+                    emittedFiles.push({ name, content, size: new Blob([content]).size });
                 });
 
                 // Convert files to Python-friendly structure
@@ -189,7 +1000,7 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
                 // Make files available in Python global scope
                 py.globals.set("files_js", filesData);
 
-                // Bootstrap script to convert js proxy to python list of dicts
+                // Bootstrap script to convert js proxy to python list of dicts + define output()
                 await py.runPythonAsync(`
 import js
 files = []
@@ -200,9 +1011,14 @@ for f in js.files_js:
         "size": f.size,
         "type": f.type
     })
+
+def output(name, content):
+    js._js_output(name, content)
 `);
 
                 const result = await py.runPythonAsync(script);
+
+                setOutputFiles(emittedFiles);
 
                 if (result !== undefined) {
                     setOutput(String(result));
@@ -216,37 +1032,42 @@ for f in js.files_js:
         }
     };
 
-    const handleExecuteSample = useCallback(() => {
+    const handleExecuteSample = useCallback((sample: SampleEntry) => {
         setIsRunningSample(true);
+        setShowSampleMenu(false);
+        setOutputFiles([]);
 
-        // Build the sample file object
+        const contentStr = sample.content;
         const sampleFile: ScriptFile = {
             id: 'sample_' + Date.now(),
-            name: SAMPLE_SOURCE_FILE.name,
-            content: SAMPLE_SOURCE_FILE.content,
-            size: SAMPLE_SOURCE_FILE.size,
-            type: SAMPLE_SOURCE_FILE.type
+            name: sample.fileName,
+            content: contentStr,
+            size: new Blob([contentStr]).size,
+            type: sample.fileType
         };
 
-        // Set UI state
         setLanguage('javascript');
         setFiles([sampleFile]);
-        setScript(SAMPLE_SCRIPT);
+        setScript(sample.script);
 
-        // Execute the sample script directly (avoid stale closures)
         try {
             const logs: string[] = [];
+            const emittedFiles: OutputFile[] = [];
             const safeConsole = {
                 log: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
                 info: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
                 warn: (...args: any[]) => logs.push("[WARN] " + args.map(a => String(a)).join(' ')),
                 error: (...args: any[]) => logs.push("[ERROR] " + args.map(a => String(a)).join(' ')),
             };
+            const safeOutput = (name: string, content: string) => {
+                emittedFiles.push({ name, content, size: new Blob([content]).size });
+            };
 
-            const runScript = new Function('files', 'console', SAMPLE_SCRIPT);
-            const result = runScript([sampleFile], safeConsole);
+            const runScript = new Function('files', 'console', 'output', sample.script);
+            const result = runScript([sampleFile], safeConsole, safeOutput);
 
             setConsoleOutput(logs);
+            setOutputFiles(emittedFiles);
 
             if (result !== undefined) {
                 if (typeof result === 'object') {
@@ -435,6 +1256,18 @@ for f in js.files_js:
                                         <li>
                                             <code className="bg-slate-900 px-1.5 py-0.5 rounded text-indigo-300 font-bold">console</code>
                                             <div className="mt-1 text-slate-400">Standard console methods: <code>log</code>, <code>warn</code>, <code>error</code>, <code>info</code></div>
+                                        </li>
+                                        <li>
+                                            <code className="bg-slate-900 px-1.5 py-0.5 rounded text-emerald-300 font-bold">output</code>
+                                            <div className="mt-1 text-slate-400 mb-2">Emit a downloadable file. Call multiple times for multiple files.</div>
+                                            <pre className="bg-slate-950 p-3 rounded-lg text-xs font-mono text-emerald-300 overflow-x-auto border border-slate-800">
+                                                {`// Emit a modified file for download
+output("Modified.xcstrings", JSON.stringify(data, null, 2));
+
+// Emit multiple files
+output("file1.strings", content1);
+output("file2.strings", content2);`}
+                                            </pre>
                                         </li>
                                     </ul>
                                 </div>
@@ -665,39 +1498,75 @@ for f in files:
                 </button>
             </div>
 
-            <div className="flex-1 overflow-hidden bg-black/40">
-                <VerticalSplitPane initialTopHeight={30}>
-                    {/* Top: Console Logs */}
-                    <div className="h-full flex flex-col bg-black/20">
-                        <div className="flex items-center justify-between px-3 py-1 bg-slate-900/50 border-b border-slate-800 flex-shrink-0">
-                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Console</div>
-                            <button onClick={() => setConsoleOutput([])} className="text-[10px] text-slate-600 hover:text-slate-400">Clear</button>
+            <div className="flex-1 overflow-hidden bg-black/40 flex flex-col">
+                {/* Output Files Section */}
+                {outputFiles.length > 0 && (
+                    <div className="flex-shrink-0 border-b border-slate-700">
+                        <div className="flex items-center justify-between px-3 py-1.5 bg-emerald-950/40 border-b border-emerald-800/30">
+                            <div className="text-[10px] font-bold text-emerald-400 uppercase tracking-wide flex items-center gap-1.5">
+                                <Download size={11} />
+                                Output Files ({outputFiles.length})
+                            </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
-                            {consoleOutput.length === 0 ? (
-                                <span className="text-slate-700 text-xs italic opacity-50">No console output...</span>
-                            ) : (
-                                consoleOutput.map((log, i) => (
-                                    <div key={i} className="font-mono text-xs text-slate-400 mb-1 border-b border-white/5 pb-1 last:border-0 font-light break-all whitespace-pre-wrap">
-                                        {log}
+                        <div className="p-2 space-y-1.5 bg-slate-900/60 max-h-[140px] overflow-y-auto custom-scrollbar">
+                            {outputFiles.map((file, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-2 bg-slate-800/80 rounded-lg border border-slate-700/60 hover:border-emerald-600/40 transition-colors group">
+                                    <div className="flex items-center gap-2.5 overflow-hidden">
+                                        <div className="w-7 h-7 rounded bg-emerald-900/40 border border-emerald-700/30 flex items-center justify-center shrink-0">
+                                            <FileText size={13} className="text-emerald-400" />
+                                        </div>
+                                        <div className="flex flex-col min-w-0">
+                                            <span className="text-xs text-slate-200 font-medium truncate">{file.name}</span>
+                                            <span className="text-[10px] text-slate-500">{formatSize(file.size)}</span>
+                                        </div>
                                     </div>
-                                ))
-                            )}
+                                    <button
+                                        onClick={() => handleDownloadFile(file)}
+                                        className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-semibold bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-300 hover:text-emerald-200 rounded-md border border-emerald-600/30 hover:border-emerald-500/50 transition-all active:scale-95 shrink-0"
+                                    >
+                                        <Download size={12} />
+                                        Download
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     </div>
+                )}
 
-                    {/* Bottom: Result */}
-                    <div className="h-full flex flex-col">
-                        <div className="flex items-center justify-between px-3 py-1 bg-slate-900/50 border-b border-slate-800 flex-shrink-0">
-                            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Result</div>
+                <div className="flex-1 overflow-hidden">
+                    <VerticalSplitPane initialTopHeight={30}>
+                        {/* Top: Console Logs */}
+                        <div className="h-full flex flex-col bg-black/20">
+                            <div className="flex items-center justify-between px-3 py-1 bg-slate-900/50 border-b border-slate-800 flex-shrink-0">
+                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Console</div>
+                                <button onClick={() => setConsoleOutput([])} className="text-[10px] text-slate-600 hover:text-slate-400">Clear</button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+                                {consoleOutput.length === 0 ? (
+                                    <span className="text-slate-700 text-xs italic opacity-50">No console output...</span>
+                                ) : (
+                                    consoleOutput.map((log, i) => (
+                                        <div key={i} className="font-mono text-xs text-slate-400 mb-1 border-b border-white/5 pb-1 last:border-0 font-light break-all whitespace-pre-wrap">
+                                            {log}
+                                        </div>
+                                    ))
+                                )}
+                            </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                            <pre className="font-mono text-xs sm:text-sm text-green-400 whitespace-pre-wrap break-all">
-                                {output || <span className="text-slate-700 italic">Script return value will appear here...</span>}
-                            </pre>
+
+                        {/* Bottom: Result */}
+                        <div className="h-full flex flex-col">
+                            <div className="flex items-center justify-between px-3 py-1 bg-slate-900/50 border-b border-slate-800 flex-shrink-0">
+                                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">Result</div>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                                <pre className="font-mono text-xs sm:text-sm text-green-400 whitespace-pre-wrap break-all">
+                                    {output || <span className="text-slate-700 italic">Script return value will appear here...</span>}
+                                </pre>
+                            </div>
                         </div>
-                    </div>
-                </VerticalSplitPane>
+                    </VerticalSplitPane>
+                </div>
             </div>
         </div>
     );
@@ -705,7 +1574,7 @@ for f in files:
     return (
         <div className="flex flex-col h-screen bg-slate-900 text-slate-100 font-sans overflow-hidden">
             {/* Header */}
-            <header className="flex items-center px-6 py-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur-md flex-shrink-0">
+            <header className="flex items-center px-6 py-4 border-b border-slate-700 bg-slate-800/50 backdrop-blur-md flex-shrink-0 relative z-50">
                 <button onClick={onBack} className="p-2 mr-4 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white transition-all">
                     <ArrowLeft size={24} />
                 </button>
@@ -716,14 +1585,44 @@ for f in files:
                     <p className="text-slate-400 text-sm">run JS/TS scripts on multiple files</p>
                 </div>
                 <div className="ml-auto flex items-center space-x-3">
-                    <button
-                        onClick={handleExecuteSample}
-                        className="flex items-center gap-2 px-4 sm:px-5 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
-                        title="Load a sample file and script, then auto-run to see how Script Runner works"
-                    >
-                        <Sparkles size={16} />
-                        <span className="hidden sm:inline">Execute Sample</span>
-                    </button>
+                    <div className="relative" ref={sampleMenuRef}>
+                        <button
+                            onClick={() => setShowSampleMenu(!showSampleMenu)}
+                            className="flex items-center gap-2 px-4 sm:px-5 py-2 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 hover:border-amber-400/60 rounded-lg font-semibold active:scale-95 transition-all text-sm"
+                            title="Load a sample file and script, then auto-run to see how Script Runner works"
+                        >
+                            <Sparkles size={16} />
+                            <span className="hidden sm:inline">Execute Sample</span>
+                            <ChevronDown size={14} className={`transition-transform duration-200 ${showSampleMenu ? 'rotate-180' : ''}`} />
+                        </button>
+
+                        {/* Sample Popover Menu */}
+                        {showSampleMenu && (
+                            <div className="absolute right-0 top-full mt-2 w-72 bg-slate-800 border border-slate-600 rounded-xl shadow-2xl shadow-black/50 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                <div className="px-4 py-2.5 border-b border-slate-700 bg-slate-800/80">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Choose a sample file type</p>
+                                </div>
+                                <div className="py-1.5 max-h-[320px] overflow-y-auto custom-scrollbar">
+                                    {SAMPLES.map((sample, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleExecuteSample(sample)}
+                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-slate-700/70 transition-colors group"
+                                        >
+                                            <div className={`w-10 h-7 rounded-md bg-gradient-to-br ${sample.badgeColor} flex items-center justify-center text-white text-[9px] font-black tracking-tight shadow-md shrink-0`}>
+                                                {sample.badge}
+                                            </div>
+                                            <div className="flex flex-col min-w-0">
+                                                <span className="text-sm text-slate-200 font-medium group-hover:text-white transition-colors">{sample.label}</span>
+                                                <span className="text-[11px] text-slate-500 truncate">{sample.fileName}</span>
+                                            </div>
+                                            <Play size={14} className="ml-auto text-slate-600 group-hover:text-amber-400 transition-colors shrink-0" />
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <button
                         onClick={handleRun}
                         className="flex items-center gap-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white rounded-lg font-bold shadow-lg shadow-green-900/20 active:scale-95 transition-all text-sm sm:text-base"
