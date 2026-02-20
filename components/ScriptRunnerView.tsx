@@ -38,6 +38,7 @@ interface SampleEntry {
     fileType: string;
     content: string;
     script: string;
+    pythonScript: string;
 }
 
 const SAMPLES: SampleEntry[] = [
@@ -85,6 +86,32 @@ return {
     averageRating: parseFloat(avgRating),
     topApp: topApp.name
 };
+`,
+        pythonScript: String.raw`# 📊 App Analytics Report
+# Demonstrates JSON parsing and data aggregation.
+import json
+
+file = files[0]
+apps = json.loads(file["content"])
+
+print(f"📁 Processing: {file['name']}")
+print(f"   Found {len(apps)} apps\n")
+
+total_downloads = sum(a["downloads"] for a in apps)
+avg_rating = sum(a["rating"] for a in apps) / len(apps)
+top_app = max(apps, key=lambda a: a["downloads"])
+
+print(f"📈 Total Downloads: {total_downloads:,}")
+print(f"⭐ Average Rating:  {avg_rating:.1f}")
+print(f"🏆 Top App:         {top_app['name']} ({top_app['downloads']:,} downloads)")
+print()
+
+apps.sort(key=lambda a: a["downloads"], reverse=True)
+for i, app in enumerate(apps):
+    bar = "█" * round(app["downloads"] / total_downloads * 30)
+    print(f"{i+1}. {app['name']:<16} v{app['version']}  ⭐{app['rating']}  {bar} {app['downloads']:,}")
+
+print(f"\n✅ Done — {len(apps)} apps analyzed.")
 `,
     },
     {
@@ -151,6 +178,30 @@ console.log("   Remaining: " + todos.length);
 todos.forEach(t => console.log("   ⬜ " + t.trim()));
 
 return { lines: lines.length, words: words.length, todos: todos.length, done: done.length };
+`,
+        pythonScript: String.raw`# 📝 Text File Analyser
+# Demonstrates line/word counting and checklist detection.
+
+file = files[0]
+content = file["content"]
+lines = content.split("\n")
+words = content.split()
+
+print(f"📄 File: {file['name']}")
+print(f"   Type: Plain Text\n")
+print(f"📏 Statistics:")
+print(f"   Lines: {len(lines)}")
+print(f"   Words: {len(words)}")
+print(f"   Characters: {len(content)}\n")
+
+todos = [l for l in lines if "[ ]" in l]
+done = [l for l in lines if "[x]" in l]
+
+print("✅ Checklist:")
+print(f"   Completed: {len(done)}")
+print(f"   Remaining: {len(todos)}")
+for t in todos:
+    print(f"   ⬜ {t.strip()}")
 `,
     },
     {
@@ -276,6 +327,51 @@ console.log("   Missing translations: " + missing.length);
 
 return { keys: keys.length, languages: languages.length, missing: missing.length };
 `,
+        pythonScript: String.raw`# 🌍 XCStrings Catalog Analyser
+# Demonstrates parsing an .xcstrings catalog (JSON-based).
+import json
+
+file = files[0]
+catalog = json.loads(file["content"])
+
+print(f"🧩 String Catalog: {file['name']}")
+print(f"   Source Language: {catalog['sourceLanguage']}")
+print(f"   Version: {catalog['version']}\n")
+
+keys = list(catalog["strings"].keys())
+print(f"🔑 Total Keys: {len(keys)}")
+
+# Collect all languages
+all_langs = set()
+for key in keys:
+    locs = catalog["strings"][key].get("localizations", {})
+    all_langs.update(locs.keys())
+languages = sorted(all_langs)
+print(f"🌐 Languages: {', '.join(languages)}")
+
+print("\n■ Key Details:")
+print("─" * 60)
+
+missing = []
+for key in keys:
+    entry = catalog["strings"][key]
+    locs = entry.get("localizations", {})
+    translated = list(locs.keys())
+    missing_langs = [l for l in languages if l not in translated]
+    has_plurals = any(
+        "variations" in locs.get(l, {}) for l in translated
+    )
+    status = "✅" if not missing_langs else "⚠️"
+    if has_plurals:
+        status += " 🔢"
+    print(f"  {status} {key}")
+    print(f"       Translated: {', '.join(translated)}")
+    if missing_langs:
+        print(f"       Missing: {', '.join(missing_langs)}")
+        missing.extend([(key, l) for l in missing_langs])
+
+print(f"\n📊 Summary: {len(keys)} keys, {len(languages)} languages, {len(missing)} missing")
+`,
     },
     {
         label: 'Strings File (.strings)',
@@ -390,6 +486,51 @@ if (errors.length > 0) {
 }
 
 return { entries: entries.length, sections: sections.length, duplicates: duplicates.length };
+`,
+        pythonScript: String.raw`# 📜 iOS .strings File Parser
+# Demonstrates parsing key="value" pairs from .strings files.
+import re
+
+file = files[0]
+content = file["content"]
+lines = content.split("\n")
+
+print(f"📄 Parsing: {file['name']}")
+print(f"   Type: Apple .strings\n")
+
+entries = []
+sections = []
+warnings = []
+
+for line_num, line in enumerate(lines, 1):
+    stripped = line.strip()
+    if not stripped:
+        continue
+    # Section comment
+    sec_match = re.match(r'/\*\s*(.+?)\s*\*/', stripped)
+    if sec_match:
+        sections.append(sec_match.group(1))
+        continue
+    # Key-value pair
+    kv_match = re.match(r'^"(.+?)"\s*=\s*"(.*)";\s*$', stripped)
+    if kv_match:
+        entries.append({"key": kv_match.group(1), "value": kv_match.group(2), "line": line_num})
+    elif stripped and not stripped.startswith("//"):
+        warnings.append(f"Line {line_num}: {stripped}")
+
+print(f"📂 Sections ({len(sections)}): {' | '.join(sections)}")
+print(f"🔑 Entries: {len(entries)}")
+print("─" * 55)
+
+for e in entries:
+    print(f"   {e['key']:<20} → {e['value']}")
+
+if warnings:
+    print(f"\n⚠️ Warnings ({len(warnings)}):")
+    for w in warnings:
+        print(f"   {w}")
+
+print(f"\n✅ Parsed {len(entries)} key-value pairs from {len(sections)} sections.")
 `,
     },
     {
@@ -555,6 +696,75 @@ console.log("   Total variations:  " + totalForms);
 
 return { pluralKeys: pluralRules.length, totalVariations: totalForms };
 `,
+        pythonScript: String.raw`# 📦 .stringsdict Plural Rules Analyser
+# Demonstrates parsing plist XML to extract plural rules.
+import re
+
+file = files[0]
+content = file["content"]
+
+print(f"📄 Parsing: {file['name']}")
+print(f"   Type: stringsdict (Plist XML)\n")
+
+known_forms = ['zero', 'one', 'two', 'few', 'many', 'other']
+lines = content.split("\n")
+
+plural_rules = []
+current_key = None
+current_forms = []
+format_key = None
+depth = 0
+rule_depth = -1
+
+for line in lines:
+    stripped = line.strip()
+    if stripped == "<dict>":
+        depth += 1
+    elif stripped == "</dict>":
+        if depth == rule_depth and current_key:
+            plural_rules.append({
+                "key": current_key,
+                "format": format_key,
+                "forms": current_forms[:]
+            })
+            current_key = None
+            current_forms = []
+            format_key = None
+            rule_depth = -1
+        depth -= 1
+    key_match = re.match(r'<key>(.+?)</key>', stripped)
+    if key_match:
+        k = key_match.group(1)
+        if depth == 2 and k not in ['NSStringLocalizedFormatKey']:
+            current_key = k
+            rule_depth = depth
+        if k == 'NSStringLocalizedFormatKey':
+            fmt_match = re.search(r'<string>(.*?)</string>', stripped)
+            if fmt_match:
+                format_key = fmt_match.group(1)
+        if k in known_forms:
+            current_forms.append(k)
+
+if current_key and current_forms:
+    plural_rules.append({
+        "key": current_key,
+        "format": format_key,
+        "forms": current_forms[:]
+    })
+
+print(f"🔑 Plural Rules Found: {len(plural_rules)}")
+print("─" * 40)
+
+total_var = 0
+for i, rule in enumerate(plural_rules):
+    print(f"\n{i+1}. {rule['key']}")
+    if rule['format']:
+        print(f"     Format: {rule['format']}")
+    print(f"     Forms: {', '.join(rule['forms'])}")
+    total_var += len(rule['forms'])
+
+print(f"\n📊 Total: {len(plural_rules)} rules, {total_var} variations")
+`,
     },
     {
         label: 'Android XML (.xml)',
@@ -692,6 +902,64 @@ console.log("   String arrays: " + arrays.length);
 
 return { strings: strings.length, plurals: plurals.length, arrays: arrays.length };
 `,
+        pythonScript: String.raw`# 📱 Android XML Resources Analyser
+# Demonstrates parsing Android strings.xml to extract resources.
+import re
+
+file = files[0]
+content = file["content"]
+
+print(f"📄 Parsing: {file['name']}")
+print(f"   Type: Android resources XML\n")
+
+# Extract <string> elements
+strings = re.findall(r'<string\s+name="([^"]+)">(.*?)</string>', content)
+
+# Extract <!-- comment --> sections
+sections = re.findall(r'<!--\s*(.+?)\s*-->', content)
+
+# Extract <plurals> elements
+plurals = []
+for name in re.findall(r'<plurals\s+name="([^"]+)">', content):
+    block = re.search(rf'<plurals\s+name="{name}">[\s\S]*?</plurals>', content)
+    if block:
+        items = re.findall(r'<item\s+quantity="([^"]+)">(.*?)</item>', block.group())
+        plurals.append({"name": name, "items": items})
+
+# Extract <string-array> elements
+arrays = []
+for name in re.findall(r'<string-array\s+name="([^"]+)">', content):
+    block = re.search(rf'<string-array\s+name="{name}">[\s\S]*?</string-array>', content)
+    if block:
+        items = re.findall(r'<item>(.*?)</item>', block.group())
+        arrays.append({"name": name, "items": items})
+
+if sections:
+    print(f"📂 Sections: {' | '.join(sections)}")
+
+print(f"\n📝 Strings ({len(strings)}):")
+print("─" * 55)
+for name, value in strings:
+    print(f"   {name:<20} → {value}")
+
+if plurals:
+    print(f"\n🔢 Plurals ({len(plurals)}):")
+    print("─" * 55)
+    for p in plurals:
+        forms = ", ".join(f"{q}='{v}'" for q, v in p["items"])
+        print(f"   {p['name']}: {forms}")
+
+if arrays:
+    print(f"\n📚 String Arrays ({len(arrays)}):")
+    print("─" * 55)
+    for a in arrays:
+        print(f"   {a['name']}: [{', '.join(a['items'])}]")
+
+print(f"\n📊 Summary:")
+print(f"   Strings:       {len(strings)}")
+print(f"   Plural groups: {len(plurals)}")
+print(f"   String arrays: {len(arrays)}")
+`,
     },
     // --- Transform Samples (demonstrate output() API) ---
     {
@@ -777,6 +1045,46 @@ output("Localizable_Complete.xcstrings", JSON.stringify(catalog, null, 2));
 
 return { keysProcessed: keys.length, translationsAdded: addedCount };
 `,
+        pythonScript: String.raw`# ✏️ XCStrings — Add Missing Translations
+# Adds placeholder entries for missing language translations.
+import json
+
+file = files[0]
+catalog = json.loads(file["content"])
+keys = list(catalog["strings"].keys())
+
+# Collect all languages
+all_langs = set()
+for key in keys:
+    locs = catalog["strings"][key].get("localizations", {})
+    all_langs.update(locs.keys())
+languages = sorted(all_langs)
+
+print(f"🌍 Languages found: {', '.join(languages)}")
+print(f"🔑 Total keys: {len(keys)}\n")
+
+added_count = 0
+for key in keys:
+    entry = catalog["strings"][key]
+    if "localizations" not in entry:
+        entry["localizations"] = {}
+    existing = list(entry["localizations"].keys())
+    missing = [l for l in languages if l not in existing]
+    if missing:
+        en_value = entry["localizations"].get("en", {}).get("stringUnit", {}).get("value", key)
+        for lang in missing:
+            entry["localizations"][lang] = {
+                "stringUnit": {
+                    "state": "needs_review",
+                    "value": f"[{lang.upper()}] {en_value}"
+                }
+            }
+            added_count += 1
+        print(f"  ✅ {key}  ← added: {', '.join(missing)}")
+
+print(f"\n📊 Added {added_count} placeholder translations.")
+output("Localizable_Complete.xcstrings", json.dumps(catalog, indent=2, ensure_ascii=False))
+`,
     },
     {
         label: 'Strings — Sort Keys A-Z',
@@ -842,6 +1150,40 @@ output("Localizable_Sorted.strings", sortedContent);
 
 console.log("\\n✅ Sorted file emitted for download.");
 return { totalEntries: entries.length };
+`,
+        pythonScript: String.raw`# 🔤 Strings — Sort Keys Alphabetically
+# Parses a .strings file, sorts key-value pairs A-Z,
+# and emits the sorted file for download.
+import re
+
+file = files[0]
+lines = file["content"].split("\n")
+
+print(f"📄 Parsing: {file['name']}\n")
+
+# Parse entries
+entries = []
+for line in lines:
+    m = re.match(r'^"(.+?)"\s*=\s*"(.*)";\s*$', line.strip())
+    if m:
+        entries.append((m.group(1), m.group(2)))
+
+print(f"🔑 Found {len(entries)} entries")
+
+# Sort
+entries.sort(key=lambda e: e[0])
+
+print("🔤 Sorted A → Z\n")
+
+# Build output
+sorted_lines = [f'"{k}" = "{v}";' for k, v in entries]
+sorted_content = "\n".join(sorted_lines) + "\n"
+
+for i, (k, v) in enumerate(entries):
+    print(f"{i+1:>2}. {k}")
+
+output("Localizable_Sorted.strings", sorted_content)
+print("\n✅ Sorted file emitted for download.")
 `,
     },
 ];
@@ -1002,9 +1344,8 @@ export const ScriptRunnerView: React.FC<ScriptRunnerViewProps> = ({ onBack }) =>
 
                 // Bootstrap script to convert js proxy to python list of dicts + define output()
                 await py.runPythonAsync(`
-import js
 files = []
-for f in js.files_js:
+for f in files_js:
     files.append({
         "name": f.name,
         "content": f.content,
@@ -1013,7 +1354,7 @@ for f in js.files_js:
     })
 
 def output(name, content):
-    js._js_output(name, content)
+    _js_output(name, content)
 `);
 
                 const result = await py.runPythonAsync(script);
@@ -1032,10 +1373,12 @@ def output(name, content):
         }
     };
 
-    const handleExecuteSample = useCallback((sample: SampleEntry) => {
+    const handleExecuteSample = useCallback(async (sample: SampleEntry) => {
         setIsRunningSample(true);
         setShowSampleMenu(false);
         setOutputFiles([]);
+        setConsoleOutput([]);
+        setOutput('');
 
         const contentStr = sample.content;
         const sampleFile: ScriptFile = {
@@ -1046,44 +1389,100 @@ def output(name, content):
             type: sample.fileType
         };
 
-        setLanguage('javascript');
+        const isJS = language === 'javascript';
+        const chosenScript = isJS ? sample.script : sample.pythonScript;
+
         setFiles([sampleFile]);
-        setScript(sample.script);
+        setScript(chosenScript);
 
-        try {
-            const logs: string[] = [];
-            const emittedFiles: OutputFile[] = [];
-            const safeConsole = {
-                log: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
-                info: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
-                warn: (...args: any[]) => logs.push("[WARN] " + args.map(a => String(a)).join(' ')),
-                error: (...args: any[]) => logs.push("[ERROR] " + args.map(a => String(a)).join(' ')),
-            };
-            const safeOutput = (name: string, content: string) => {
-                emittedFiles.push({ name, content, size: new Blob([content]).size });
-            };
+        if (isJS) {
+            try {
+                const logs: string[] = [];
+                const emittedFiles: OutputFile[] = [];
+                const safeConsole = {
+                    log: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
+                    info: (...args: any[]) => logs.push(args.map(a => String(a)).join(' ')),
+                    warn: (...args: any[]) => logs.push("[WARN] " + args.map(a => String(a)).join(' ')),
+                    error: (...args: any[]) => logs.push("[ERROR] " + args.map(a => String(a)).join(' ')),
+                };
+                const safeOutput = (name: string, content: string) => {
+                    emittedFiles.push({ name, content, size: new Blob([content]).size });
+                };
 
-            const runScript = new Function('files', 'console', 'output', sample.script);
-            const result = runScript([sampleFile], safeConsole, safeOutput);
+                const runScript = new Function('files', 'console', 'output', chosenScript);
+                const result = runScript([sampleFile], safeConsole, safeOutput);
 
-            setConsoleOutput(logs);
-            setOutputFiles(emittedFiles);
+                setConsoleOutput(logs);
+                setOutputFiles(emittedFiles);
 
-            if (result !== undefined) {
-                if (typeof result === 'object') {
-                    setOutput(JSON.stringify(result, null, 2));
+                if (result !== undefined) {
+                    if (typeof result === 'object') {
+                        setOutput(JSON.stringify(result, null, 2));
+                    } else {
+                        setOutput(String(result));
+                    }
                 } else {
-                    setOutput(String(result));
+                    setOutput('Script executed successfully (no return value)');
                 }
-            } else {
-                setOutput('Script executed successfully (no return value)');
+            } catch (err: any) {
+                setConsoleOutput([`[EXECUTION ERROR]: ${err.message}`]);
+            } finally {
+                setIsRunningSample(false);
             }
-        } catch (err: any) {
-            setConsoleOutput([`[EXECUTION ERROR]: ${err.message}`]);
-        } finally {
-            setIsRunningSample(false);
+        } else {
+            // Python execution (async)
+            try {
+                const py = await loadPyodideRuntime();
+                const emittedFiles: OutputFile[] = [];
+
+                py.setStdout({
+                    batched: (msg: string) => {
+                        setConsoleOutput(prev => [...prev, msg]);
+                    }
+                });
+
+                py.globals.set("_js_output", (name: string, content: string) => {
+                    emittedFiles.push({ name, content, size: new Blob([content]).size });
+                });
+
+                const filesData = [{
+                    name: sampleFile.name,
+                    content: sampleFile.content,
+                    size: sampleFile.size,
+                    type: sampleFile.type
+                }];
+                py.globals.set("files_js", filesData);
+
+                await py.runPythonAsync(`
+files = []
+for f in files_js:
+    files.append({
+        "name": f.name,
+        "content": f.content,
+        "size": f.size,
+        "type": f.type
+    })
+
+def output(name, content):
+    _js_output(name, content)
+`);
+
+                const result = await py.runPythonAsync(chosenScript);
+
+                setOutputFiles(emittedFiles);
+
+                if (result !== undefined) {
+                    setOutput(String(result));
+                } else {
+                    setOutput('Script executed successfully (no return value)');
+                }
+            } catch (err: any) {
+                setConsoleOutput(prev => [...prev, `[PYTHON ERROR]: ${err.message}`]);
+            } finally {
+                setIsRunningSample(false);
+            }
         }
-    }, []);
+    }, [language, pyodide]);
 
     const processFiles = (fileList: FileList) => {
         Array.from(fileList).forEach(file => {
